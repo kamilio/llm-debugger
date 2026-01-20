@@ -1,7 +1,6 @@
 import express from 'express';
 import { createProxyHandler, createStreamingProxyHandler } from './proxy.js';
 import { shouldIgnoreRoute } from './config.js';
-import { createMockHandler } from './mock-server.js';
 import { createViewerRouter } from './routes/viewer.js';
 
 export function createServer(config, { onListen } = {}) {
@@ -16,16 +15,6 @@ export function createServer(config, { onListen } = {}) {
   // Health check
   app.get('/health', (req, res) => {
     res.json({ status: 'ok', target: config.targetUrl });
-  });
-
-  // Mock API routes
-  app.all('/api/*', async (req, res) => {
-    try {
-      await createMockHandler(req, res);
-    } catch (error) {
-      console.error('Mock API error:', error.message);
-      res.status(500).json({ error: 'Mock API error', message: error.message });
-    }
   });
 
   // Proxy requests to configured base target

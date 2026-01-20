@@ -103,21 +103,4 @@ describe('paths module', () => {
     });
   });
 
-  describe('getResponsesPath', () => {
-    it('should return responses.yaml in logs dir by default', async () => {
-      delete process.env.LLM_DEBUGGER_HOME;
-      delete process.env.LOG_OUTPUT_DIR;
-      delete process.env.RESPONSES_PATH;
-      const { getResponsesPath, DEFAULT_BASE_DIR } = await import(`../src/paths.js?t=${Date.now()}`);
-      const result = getResponsesPath();
-      assert.strictEqual(result, join(DEFAULT_BASE_DIR, 'logs', 'responses.yaml'));
-    });
-
-    it('should use RESPONSES_PATH when set', async () => {
-      process.env.RESPONSES_PATH = '/custom/responses.yaml';
-      const { getResponsesPath } = await import(`../src/paths.js?t=${Date.now()}`);
-      const result = getResponsesPath();
-      assert.strictEqual(result, '/custom/responses.yaml');
-    });
-  });
 });

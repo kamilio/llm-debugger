@@ -61,7 +61,6 @@ async function main() {
   const endpointSummary = [
     `Proxy URL:    http://${proxyHost}:${proxyPort}`,
     `Proxy Route:  http://${proxyHost}:${proxyPort}/proxy/*`,
-    `Mock Route:   http://${proxyHost}:${proxyPort}/api/<shape>/*`,
     `Viewer:       http://${proxyHost}:${proxyPort}/viewer`,
     `Logs:         ${config.outputDir}`,
     `Client Base:  http://${proxyHost}:${proxyPort}`,
@@ -91,7 +90,6 @@ Options:
   --target <url>       Base target URL for proxying (required)
   --home <dir>         Base directory for config/logs
   --config <path>      Path to config.yaml
-  --responses <path>   Path to responses.yaml
   --logs <dir>         Log output directory
   --force              Overwrite existing config on init
   -h, --help           Show this help message
@@ -137,7 +135,6 @@ function parseArgs(argv) {
 function applyCliEnv(flags) {
   if (flags.home) process.env.LLM_DEBUGGER_HOME = String(flags.home);
   if (flags.config) process.env.CONFIG_PATH = String(flags.config);
-  if (flags.responses) process.env.RESPONSES_PATH = String(flags.responses);
   if (flags.logs) process.env.LOG_OUTPUT_DIR = String(flags.logs);
   if (flags['proxy-host']) process.env.PROXY_HOST = String(flags['proxy-host']);
   if (flags['proxy-port']) process.env.PROXY_PORT = String(flags['proxy-port']);

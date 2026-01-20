@@ -1,18 +1,14 @@
-import { copyFile, mkdir, readFile } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import yaml from 'js-yaml';
 import { getRecentLogs } from '../logger.js';
-import { getResponsesPath } from '../paths.js';
-import { extractMessage } from '../mock-utils.js';
-import { updateResponseMapping } from '../responses-config.js';
 
 const SAFE_SEGMENT = /^[a-zA-Z0-9._-]+$/;
 
 export async function getViewerIndexData(outputDir, limit, providerFilter) {
   const logs = await getRecentLogs(outputDir, limit, providerFilter);
   const providerMeta = collectProviders(logs);
-  const providerShapes = buildProviderShapes(providerMeta);
-  return { logs, providerMeta, providerShapes };
+  return { logs, providerMeta };
 }
 
 export function collectProviders(logs) {
@@ -23,16 +19,6 @@ export function collectProviders(logs) {
     }
   }
   return Array.from(providerMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-}
-
-export function buildProviderShapes(providerMeta) {
-  const shapes = {};
-  for (const provider of providerMeta) {
-    if (provider.api_shape) {
-      shapes[provider.name] = provider.api_shape;
-    }
-  }
-  return shapes;
 }
 
 export async function loadViewerLog(outputDir, provider, filename) {
@@ -71,40 +57,6 @@ export function buildBackLink(query) {
   return search ? `/viewer?${search}` : '/viewer';
 }
 
-export async function saveResponseFromLog(outputDir, sourcePath, rawName, apiShape) {
-  const safeName = sanitizeResponseName(rawName);
-  if (!safeName) {
-    throw new Error('Invalid response name');
-  }
-
-  const logsDir = resolve(outputDir);
-  const resolvedSource = resolve(sourcePath.startsWith('/') ? sourcePath : join(process.cwd(), sourcePath));
-  if (!isPathWithin(logsDir, resolvedSource)) {
-    throw new Error('Source path must be within logs directory');
-  }
-
-  const responsesBase = dirname(getResponsesPath());
-  const responsesDir = resolve(join(responsesBase, 'responses'));
-  await mkdir(responsesDir, { recursive: true });
-
-  const filename = safeName.endsWith('.yaml') ? safeName : `${safeName}.yaml`;
-  const targetPath = join(responsesDir, filename);
-
-  await copyFile(resolvedSource, targetPath);
-
-  const logContent = await readFile(resolvedSource, 'utf-8');
-  const logEntry = yaml.load(logContent);
-  const message = extractMessage(logEntry?.request?.body, apiShape).trim();
-  if (!message) {
-    throw new Error('Unable to extract message from log for this api_shape');
-  }
-
-  const responsePath = `responses/${basename(targetPath)}`;
-  updateResponseMapping(apiShape, message, responsePath);
-
-  return { api_shape: apiShape, message, response_path: responsePath };
-}
-
 function isSafeSegment(value) {
   if (!value || typeof value !== 'string') return false;
   if (!SAFE_SEGMENT.test(value)) return false;
@@ -127,12 +79,4 @@ function resolveViewerLogPath(outputDir, provider, filename) {
 
   if (!isPathWithin(logsDir, targetPath)) return null;
   return targetPath;
-}
-
-function sanitizeResponseName(value) {
-  return String(value)
-    .trim()
-    .replace(/[^a-zA-Z0-9._-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
 }

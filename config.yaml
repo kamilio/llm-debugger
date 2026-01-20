@@ -15,5 +15,3 @@ ignore_routes:
 hide_from_viewer:
   - /v1/models
   - /cdn-cgi/**
-
-# Mock responses live in logs/responses.yaml (managed by the UI)

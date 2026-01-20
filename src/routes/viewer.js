@@ -7,7 +7,6 @@ export function createViewerRouter(config) {
 
   router.get('/', controller.index);
   router.get('/:provider/:filename', controller.detail);
-  router.post('/save-response', controller.saveResponse);
 
   return router;
 }

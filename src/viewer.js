@@ -31,24 +31,20 @@ async function getDetailTemplate() {
   return detailTemplateCache;
 }
 
-export async function renderViewer(logs, limit, providerFilter, providers, providerShapes, apiShapes) {
+export async function renderViewer(logs, limit, providerFilter, providers) {
   const template = await getTemplate();
   return ejs.render(template, {
     logs,
     limit,
     providerFilter,
     providers,
-    providerShapes,
-    apiShapes,
   });
 }
 
-export async function renderViewerDetail(log, apiShapes, providerShapes, backLink) {
+export async function renderViewerDetail(log, backLink) {
   const template = await getDetailTemplate();
   return ejs.render(template, {
     log,
-    apiShapes,
-    providerShapes,
     backLink,
   });
 }

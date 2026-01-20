@@ -199,25 +199,6 @@
             transform: translateY(-1px);
         }
 
-        .field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            border-radius: 14px;
-            border: 1px solid var(--stroke);
-            background: var(--panel-alt);
-        }
-
-        select {
-            border: none;
-            background: transparent;
-            font-size: 0.9rem;
-            font-family: "Source Sans 3", sans-serif;
-            color: var(--ink);
-            outline: none;
-        }
-
         .grid {
             display: grid;
             gap: 20px;
@@ -393,11 +374,6 @@
 
             <section class="actions">
                 <button class="btn secondary" onclick="copyPython(this)">Copy Python</button>
-                <div class="field">
-                    <span class="muted">API Shape</span>
-                    <select id="api-shape"></select>
-                </div>
-                <button class="btn" onclick="saveResponse(this)">Save Response</button>
             </section>
 
             <section class="grid">
@@ -445,8 +421,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
     <script>
         window.LOG_ENTRY = <%- JSON.stringify(log).replace(/</g, '\\u003c') %>;
-        window.API_SHAPES = <%- JSON.stringify(apiShapes || []) %>;
-        window.PROVIDER_SHAPES = <%- JSON.stringify(providerShapes || {}) %>;
 
         function formatJson(data) {
             if (typeof data === 'object' && data !== null) {
@@ -469,18 +443,6 @@
             setCode('response-headers', formatJson(log?.response?.headers));
             setCode('response-body', formatJson(log?.response?.body));
 
-            const apiShapes = window.API_SHAPES || [];
-            const providerShapes = window.PROVIDER_SHAPES || {};
-            const defaultShape = providerShapes[log.provider] || apiShapes[0] || '';
-            const shapeSelect = document.getElementById('api-shape');
-            if (shapeSelect) {
-                shapeSelect.innerHTML = apiShapes
-                    .map((shape) => {
-                        const selected = shape === defaultShape ? 'selected' : '';
-                        return `<option value="${shape}" ${selected}>${shape}</option>`;
-                    })
-                    .join('');
-            }
         }
 
         function indentMultiline(text, spaces) {
@@ -641,44 +603,6 @@
         function copyResponseBody(btn) {
             const body = window.LOG_ENTRY?.response?.body;
             copyToClipboard(formatJson(body), btn);
-        }
-
-        async function saveResponse(btn) {
-            const log = window.LOG_ENTRY || {};
-            const shapeSelect = document.getElementById('api-shape');
-            const apiShape = shapeSelect ? shapeSelect.value : '';
-
-            if (!log._source_path) {
-                alert('No source path found for this log.');
-                return;
-            }
-            if (!apiShape) {
-                alert('Select an API shape first.');
-                return;
-            }
-
-            const suggested = `${log.provider || 'response'}-${(log.timestamp || '').replace(/[:.]/g, '-')}`;
-            const name = window.prompt('Response file name:', suggested);
-            if (!name) return;
-
-            try {
-                const response = await fetch('/viewer/save-response', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        source_path: log._source_path,
-                        name,
-                        api_shape: apiShape
-                    })
-                });
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data?.message || data?.error || 'Save failed');
-                }
-                alert(`Saved response for "${data.message}" as ${data.response_path}`);
-            } catch (err) {
-                alert(`Save failed: ${err.message}`);
-            }
         }
 
         document.addEventListener('DOMContentLoaded', renderLog);
