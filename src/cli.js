@@ -40,31 +40,38 @@ async function main() {
   }
 
   let providerLabel = 'unknown';
+  let resolvedTargetUrl = targetUrl;
+  let parsedTarget;
   try {
-    const parsedTarget = new URL(targetUrl);
-    providerLabel = parsedTarget.hostname || parsedTarget.host || 'unknown';
+    parsedTarget = new URL(targetUrl);
   } catch {
     throw new Error('TARGET_URL must be a valid URL (e.g. https://api.openai.com)');
   }
+
+  if (process.env.TARGET_PORT) {
+    const targetPort = parseInt(process.env.TARGET_PORT, 10);
+    if (!Number.isFinite(targetPort) || targetPort <= 0 || targetPort > 65535) {
+      throw new Error('TARGET_PORT must be a valid TCP port (1-65535)');
+    }
+    parsedTarget.port = String(targetPort);
+    resolvedTargetUrl = parsedTarget.toString();
+  }
+
+  providerLabel = parsedTarget.hostname || parsedTarget.host || 'unknown';
 
   const config = {
     host: proxyHost,
     port: portNumber,
     outputDir: getLogsDir(),
-    targetUrl,
+    targetUrl: resolvedTargetUrl,
     provider: providerLabel,
   };
 
   intro('llm-debugger');
-  log.info(`Target: ${targetUrl}`);
+  log.info(`Target: ${resolvedTargetUrl}`);
 
   const endpointSummary = [
-    `Proxy URL:    http://${proxyHost}:${proxyPort}`,
-    `Proxy Route:  http://${proxyHost}:${proxyPort}/proxy/*`,
-    `Viewer:       http://${proxyHost}:${proxyPort}/viewer`,
-    `Logs:         ${config.outputDir}`,
-    `Client Base:  http://${proxyHost}:${proxyPort}`,
-    `Target Host:  ${providerLabel}`,
+    `Proxy:  http://${proxyHost}:${proxyPort}/* to ${resolvedTargetUrl}`,
   ].join('\n');
 
   const startSpinner = spinner();
@@ -72,7 +79,7 @@ async function main() {
 
   createServer(config, {
     onListen: () => {
-      startSpinner.stop(`Server listening on ${proxyHost}:${proxyPort}`);
+      startSpinner.stop(`Server listening on http://${proxyHost}:${proxyPort}/viewer`);
       note(endpointSummary, 'Endpoints');
     },
   });
@@ -88,6 +95,7 @@ Options:
   --proxy-host <host>  Proxy host (default: localhost)
   --proxy-port <port>  Proxy port (default: 8000)
   --target <url>       Base target URL for proxying (required)
+  --target-port <port> Override target URL port
   --home <dir>         Base directory for config/logs
   --config <path>      Path to config.yaml
   --logs <dir>         Log output directory
@@ -139,6 +147,7 @@ function applyCliEnv(flags) {
   if (flags['proxy-host']) process.env.PROXY_HOST = String(flags['proxy-host']);
   if (flags['proxy-port']) process.env.PROXY_PORT = String(flags['proxy-port']);
   if (flags.target) process.env.TARGET_URL = String(flags.target);
+  if (flags['target-port']) process.env.TARGET_PORT = String(flags['target-port']);
 }
 
 function runInit(force) {

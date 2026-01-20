@@ -42,20 +42,17 @@ export function createServer(config, { onListen } = {}) {
     }
   };
 
-  app.all('/proxy', async (req, res) => {
-    res.redirect(307, '/proxy/');
+  app.all('/proxy', (req, res) => {
+    res.redirect(307, '/');
   });
-  app.all('/proxy/', handleProxy);
-  app.all('/proxy/*', handleProxy);
+  app.all('/proxy/*', (req, res) => {
+    const originalUrl = req.originalUrl || req.url || '';
+    const stripped = originalUrl.replace(/^\/proxy/, '') || '/';
+    res.redirect(307, stripped.startsWith('/') ? stripped : `/${stripped}`);
+  });
 
-  // Catch-all for other routes
-  app.all('*', async (req, res) => {
-    if (shouldIgnoreRoute(req.path)) {
-      res.status(404).json({ error: 'Not found' });
-      return;
-    }
-    res.status(404).json({ error: 'Not found' });
-  });
+  // Catch-all: proxy everything else
+  app.all('*', handleProxy);
 
   const server = app.listen(config.port, () => {
     if (typeof onListen === 'function') {
@@ -78,12 +75,10 @@ function isStreamingRequest(req) {
 }
 
 function getProxyPath(req) {
-  const prefix = '/proxy';
   const originalUrl = req.originalUrl || req.url || '';
-  let stripped = originalUrl.startsWith(prefix) ? originalUrl.slice(prefix.length) : originalUrl;
-  if (!stripped) stripped = '/';
-  if (stripped.startsWith('?')) return `/${stripped}`;
-  return stripped.startsWith('/') ? stripped : `/${stripped}`;
+  if (!originalUrl) return '/';
+  if (originalUrl.startsWith('?')) return `/${originalUrl}`;
+  return originalUrl.startsWith('/') ? originalUrl : `/${originalUrl}`;
 }
 
 function buildTargetUrl(baseUrl, path) {

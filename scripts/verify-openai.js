@@ -27,7 +27,7 @@ const proxyUrl = `http://${proxyHost}:${proxyPort}`;
 async function main() {
   console.log(`Testing proxy at ${proxyUrl}\n`);
 
-  const response = await fetch(`${proxyUrl}/proxy/v1/chat/completions`, {
+  const response = await fetch(`${proxyUrl}/v1/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

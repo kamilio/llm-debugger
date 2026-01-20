@@ -18,7 +18,7 @@ Point your LLM client to the proxy instead of the API directly:
 
 ```bash
 # Instead of: https://api.openai.com/v1/chat/completions
-# Use:        http://localhost:8000/proxy/v1/chat/completions
+# Use:        http://localhost:8000/v1/chat/completions
 ```
 
 View logged requests at `http://localhost:8000/viewer`
@@ -27,7 +27,7 @@ View logged requests at `http://localhost:8000/viewer`
 
 | Route | Description |
 |-------|-------------|
-| `/proxy/*` | Forwards requests to target API |
+| `/*` | Forwards requests to target API |
 | `/viewer` | Web UI to inspect logged requests |
 
 ## Configuration
