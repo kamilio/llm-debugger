@@ -2,20 +2,14 @@
 
 Debug and log LLM API requests with streaming support.
 
-## Install
-
-```bash
-npm install -g llm-debugger
-```
-
 ## Quick Start
 
 ```bash
 # Start proxy to OpenAI
-llm-debugger --target https://api.openai.com
+npx llm-debugger@latest --target https://api.openai.com
 
 # Start proxy to Anthropic
-llm-debugger --target https://api.anthropic.com
+npx llm-debugger@latest --target https://api.anthropic.com
 ```
 
 ## Usage
