@@ -136,6 +136,10 @@
             width: 70px;
         }
 
+        input[type="text"] {
+            width: 180px;
+        }
+
         .btn {
             border: none;
             border-radius: 16px;
@@ -243,6 +247,18 @@
             color: var(--muted);
         }
 
+        .pill-link {
+            text-decoration: none;
+            color: var(--muted);
+            transition: transform 180ms ease, box-shadow 180ms ease, color 180ms ease;
+        }
+
+        .pill-link:hover {
+            color: var(--accent-strong);
+            box-shadow: 0 8px 18px rgba(193, 88, 60, 0.2);
+            transform: translateY(-1px);
+        }
+
         .pill.status.ok {
             color: var(--success);
             border-color: rgba(47, 138, 74, 0.3);
@@ -321,6 +337,14 @@
                             <% }); %>
                         </select>
                     </div>
+                    <div class="field">
+                        <label for="baseUrl">Base URL</label>
+                        <input type="text" id="baseUrl" placeholder="api.poe.com,openrouter.ai" value="<%= (baseUrlFilters || []).join(',') %>">
+                    </div>
+                    <div class="field">
+                        <label for="method">Method</label>
+                        <input type="text" id="method" placeholder="GET,POST" value="<%= (methodFilters || []).join(',') %>">
+                    </div>
                     <button class="btn" onclick="refresh()">Refresh</button>
                 </div>
             </header>
@@ -332,7 +356,16 @@
                     <% const backParams = new URLSearchParams(); %>
                     <% backParams.set('limit', limit); %>
                     <% if (providerFilter) { backParams.set('provider', providerFilter); } %>
+                    <% if ((baseUrlFilters || []).length) { backParams.set('baseUrl', baseUrlFilters.join(',')); } %>
+                    <% if ((methodFilters || []).length) { backParams.set('method', methodFilters.join(',')); } %>
                     <% const backQuery = backParams.toString() ? `?${backParams.toString()}` : ''; %>
+                    <% function buildBaseUrlLink(baseUrl) { %>
+                        <% const params = new URLSearchParams(backParams.toString()); %>
+                        <% const values = (baseUrlFilters || []).slice(); %>
+                        <% if (baseUrl && !values.includes(baseUrl)) { values.push(baseUrl); } %>
+                        <% if (values.length) { params.set('baseUrl', values.join(',')); } %>
+                        <% return params.toString() ? `?${params.toString()}` : ''; %>
+                    <% } %>
                     <% logs.forEach(function(log, index) { %>
                         <% if (log._hidden) { %>
                             <div class="hidden-note">Hidden: <%= log._path %></div>
@@ -351,6 +384,9 @@
                                     <span class="pill status <%= log.response.status < 400 ? 'ok' : 'bad' %>"><%= log.response.status %></span>
                                     <span class="pill"><%= log.duration_ms || 0 %>ms</span>
                                     <span class="pill"><%= new Date(log.timestamp).toLocaleTimeString() %></span>
+                                    <% if (log._base_url) { %>
+                                        <a class="pill pill-link" href="<%= buildBaseUrlLink(log._base_url) %>"><%= log._base_url %></a>
+                                    <% } %>
                                     <span class="pill"><%= providerName %></span>
                                     <% if (appName) { %>
                                         <span class="pill"><%= appName %></span>
@@ -369,10 +405,18 @@
         function refresh() {
             const limit = document.getElementById('limit').value;
             const provider = document.getElementById('provider').value;
+            const baseUrl = document.getElementById('baseUrl').value;
+            const method = document.getElementById('method').value;
             const params = new URLSearchParams();
             params.set('limit', limit);
             if (provider) {
                 params.set('provider', provider);
+            }
+            if (baseUrl) {
+                params.set('baseUrl', baseUrl);
+            }
+            if (method) {
+                params.set('method', method);
             }
             window.location.href = '/viewer?' + params.toString();
         }

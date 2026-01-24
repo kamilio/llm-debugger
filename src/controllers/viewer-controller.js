@@ -7,33 +7,58 @@ import {
   loadViewerLog,
 } from '../services/viewer-service.js';
 import { buildPreviewModel } from '../services/viewer-preview.js';
+import {
+  normalizeBaseUrlFilters,
+  normalizeBaseUrlValue,
+  normalizeMethodFilters,
+  parseCsvParam,
+} from '../viewer-filters.js';
 
 export function createViewerController(config) {
   return {
     index: async (req, res) => {
       const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
       const providerFilter = req.query.provider ? String(req.query.provider) : null;
+      const baseUrlFilters = normalizeBaseUrlFilters(parseCsvParam(req.query.baseUrl));
+      const methodFilters = normalizeMethodFilters(parseCsvParam(req.query.method));
       const { logs, providerMeta } = await getViewerIndexData(
         config.outputDir,
-        limit,
-        providerFilter
+        {
+          limit,
+          provider: providerFilter,
+          baseUrls: baseUrlFilters,
+          methods: methodFilters,
+        }
       );
 
       const processedLogs = logs.map((log) => {
         try {
           const url = new URL(log.request.url);
           const hidden = shouldHideFromViewer(url.pathname);
-          return { ...log, _hidden: hidden, _path: url.pathname };
+          return {
+            ...log,
+            _hidden: hidden,
+            _path: url.pathname,
+            _base_url: normalizeBaseUrlValue(log.request.url),
+          };
         } catch {
-          return { ...log, _hidden: false };
+          return {
+            ...log,
+            _hidden: false,
+            _base_url: normalizeBaseUrlValue(log?.request?.url),
+          };
         }
       });
 
       const html = await renderViewer(
-        processedLogs,
-        limit,
-        providerFilter,
-        providerMeta.map((provider) => provider.name)
+        {
+          logs: processedLogs,
+          limit,
+          providerFilter,
+          providers: providerMeta.map((provider) => provider.name),
+          baseUrlFilters,
+          methodFilters,
+        }
       );
 
       res.type('html').send(html);

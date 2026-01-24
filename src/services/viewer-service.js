@@ -5,8 +5,13 @@ import { getRecentLogs } from '../logger.js';
 
 const SAFE_SEGMENT = /^[a-zA-Z0-9._-]+$/;
 
-export async function getViewerIndexData(outputDir, limit, providerFilter) {
-  const logs = await getRecentLogs(outputDir, limit, providerFilter);
+export async function getViewerIndexData(outputDir, { limit, provider, baseUrls, methods }) {
+  const logs = await getRecentLogs(outputDir, {
+    limit,
+    provider,
+    baseUrls,
+    methods,
+  });
   const providerMeta = collectProviders(logs);
   return { logs, providerMeta };
 }
@@ -52,6 +57,12 @@ export function buildBackLink(query) {
   }
   if (query?.provider) {
     params.set('provider', String(query.provider));
+  }
+  if (query?.baseUrl) {
+    params.set('baseUrl', String(query.baseUrl));
+  }
+  if (query?.method) {
+    params.set('method', String(query.method));
   }
   const search = params.toString();
   return search ? `/viewer?${search}` : '/viewer';

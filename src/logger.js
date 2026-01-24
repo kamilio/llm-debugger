@@ -2,6 +2,7 @@ import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
 import { basename, join, relative } from 'node:path';
 import yaml from 'js-yaml';
 import { sanitizeBody, sanitizeHeaders, sanitizeUrl } from './redact.js';
+import { filterLogs } from './viewer-filters.js';
 
 function generateFilename() {
   const now = new Date();
@@ -68,14 +69,29 @@ export async function logRequest(outputDir, data) {
   return filepath;
 }
 
-export async function getRecentLogs(outputDir, limit = 20, provider = null) {
+export async function getRecentLogs(outputDir, limitOrOptions = 20, provider = null) {
+  let limit = 20;
+  let providerFilter = null;
+  let baseUrls = null;
+  let methods = null;
+
+  if (typeof limitOrOptions === 'object' && limitOrOptions !== null) {
+    limit = Number.isFinite(limitOrOptions.limit) ? limitOrOptions.limit : 20;
+    providerFilter = limitOrOptions.provider || null;
+    baseUrls = limitOrOptions.baseUrls || null;
+    methods = limitOrOptions.methods || null;
+  } else {
+    limit = limitOrOptions;
+    providerFilter = provider;
+  }
+
   try {
     const directories = [];
-    if (provider) {
-      if (provider === 'unknown') {
+    if (providerFilter) {
+      if (providerFilter === 'unknown') {
         directories.push({ dir: outputDir, provider: null });
       } else {
-        directories.push({ dir: join(outputDir, provider), provider });
+        directories.push({ dir: join(outputDir, providerFilter), provider: providerFilter });
       }
     } else {
       const rootEntries = await readdir(outputDir, { withFileTypes: true });
@@ -122,8 +138,8 @@ export async function getRecentLogs(outputDir, limit = 20, provider = null) {
       })
     );
 
-    return logs
-      .filter(Boolean)
+    const filteredLogs = filterLogs(logs.filter(Boolean), { baseUrls, methods });
+    return filteredLogs
       .sort((a, b) => {
         const aTime = Date.parse(a.timestamp || '') || 0;
         const bTime = Date.parse(b.timestamp || '') || 0;
