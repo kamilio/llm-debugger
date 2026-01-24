@@ -432,12 +432,12 @@
             <% return String(value); %>
         <% } %>
     <% } %>
-    <% const sections = [ %>
-        <% { key: 'requestHeaders', title: 'Request headers' }, %>
-        <% { key: 'responseHeaders', title: 'Response headers' }, %>
-        <% { key: 'requestBody', title: 'Request body' }, %>
-        <% { key: 'responseBody', title: 'Response body' }, %>
-    <% ]; %>
+    <% const sections = [
+        { key: 'requestHeaders', title: 'Request headers' },
+        { key: 'responseHeaders', title: 'Response headers' },
+        { key: 'requestBody', title: 'Request body' },
+        { key: 'responseBody', title: 'Response body' },
+    ]; %>
     <div class="page">
         <div class="shell">
             <a class="back" href="<%= backLink %>">Back to viewer</a>
