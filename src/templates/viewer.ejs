@@ -246,6 +246,11 @@
         .log-card.is-selected {
             border-color: rgba(16, 163, 127, 0.5);
             box-shadow: 0 14px 28px rgba(16, 163, 127, 0.18);
+            background: linear-gradient(135deg, rgba(16, 163, 127, 0.12), rgba(16, 163, 127, 0.02) 65%), var(--panel);
+        }
+
+        .log-card.is-selected::after {
+            opacity: 0.6;
         }
 
         .compare-check {
@@ -300,6 +305,7 @@
             border: 1px solid var(--stroke);
             background: var(--panel);
             box-shadow: var(--shadow-soft);
+            margin-top: 18px;
         }
 
         .compare-bar.is-active {
