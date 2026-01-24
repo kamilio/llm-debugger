@@ -13,6 +13,7 @@ import { loadConfig } from './config.js';
 import { getEditorCandidates } from './editor.js';
 import { findAvailablePort, parsePortSpec } from './ports.js';
 import { resolveAliasConfig } from './aliases.js';
+import { addAliasToConfig } from './config-aliases.js';
 
 async function main() {
   const { flags, positionals } = parseArgs(process.argv.slice(2));
@@ -112,6 +113,7 @@ Usage:
   llm-debugger init [--force]
   llm-debugger config show
   llm-debugger config edit
+  llm-debugger config add-alias <alias> <url>
 
 Options:
   --proxy-host <host>  Proxy host (default: localhost)
@@ -208,7 +210,7 @@ function runInit(force) {
   outro('Init complete.');
 }
 
-function runConfigCommand(subcommand) {
+function runConfigCommand(subcommand, args) {
   if (!subcommand || subcommand === 'show') {
     const content = getConfigDisplayContent();
     process.stdout.write(content);
@@ -217,6 +219,11 @@ function runConfigCommand(subcommand) {
 
   if (subcommand === 'edit') {
     runConfigEdit();
+    return;
+  }
+
+  if (subcommand === 'add-alias') {
+    runConfigAddAlias(args);
     return;
   }
 
@@ -240,6 +247,19 @@ function runConfigEdit() {
   }
 
   console.log(configPath);
+}
+
+function runConfigAddAlias(args) {
+  const [aliasName, url] = args;
+  if (!aliasName || !url) {
+    log.error('Usage: llm-debugger config add-alias <alias> <url>');
+    process.exitCode = 1;
+    return;
+  }
+
+  const result = addAliasToConfig(aliasName, url);
+  log.success(`Added alias ${result.alias} -> ${result.url}`);
+  log.info(`Config: ${result.configPath}`);
 }
 
 main();

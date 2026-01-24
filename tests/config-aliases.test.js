@@ -1,0 +1,53 @@
+import { describe, it, afterEach } from 'node:test';
+import assert from 'node:assert';
+import { mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import yaml from 'js-yaml';
+import { addAliasToConfig } from '../src/config-aliases.js';
+
+describe('addAliasToConfig', () => {
+  let testDir;
+
+  afterEach(() => {
+    if (testDir) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it('adds an alias to a new config file', () => {
+    testDir = join(tmpdir(), `llm-debugger-alias-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+    const configPath = join(testDir, 'config.yaml');
+
+    const result = addAliasToConfig('poe', 'https://api.poe.com', configPath);
+    const content = readFileSync(configPath, 'utf-8');
+    const parsed = yaml.load(content);
+
+    assert.strictEqual(result.alias, 'poe');
+    assert.strictEqual(result.url, 'https://api.poe.com/');
+    assert.strictEqual(parsed.aliases.poe.url, 'https://api.poe.com/');
+  });
+
+  it('rejects invalid alias names', () => {
+    testDir = join(tmpdir(), `llm-debugger-alias-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+    const configPath = join(testDir, 'config.yaml');
+
+    assert.throws(
+      () => addAliasToConfig('bad/alias', 'https://api.poe.com', configPath),
+      /safe path segment/
+    );
+  });
+
+  it('rejects invalid alias URLs', () => {
+    testDir = join(tmpdir(), `llm-debugger-alias-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+    const configPath = join(testDir, 'config.yaml');
+
+    assert.throws(
+      () => addAliasToConfig('poe', 'not-a-url', configPath),
+      /valid URL/
+    );
+  });
+});
