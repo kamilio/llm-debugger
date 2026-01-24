@@ -11,6 +11,7 @@ import { getConfigPath, getHomeConfigPath, getLogsDir } from './paths.js';
 import { getConfigDisplayContent, getConfigEditPath } from './config-file.js';
 import { loadConfig } from './config.js';
 import { getEditorCandidates } from './editor.js';
+import { findAvailablePort, parsePortSpec } from './ports.js';
 
 async function main() {
   const { flags, positionals } = parseArgs(process.argv.slice(2));
@@ -38,11 +39,9 @@ async function main() {
 
   const proxyHost = process.env.PROXY_HOST || 'localhost';
 
-  const proxyPort = process.env.PROXY_PORT || '8000';
-  const portNumber = parseInt(proxyPort, 10);
-  if (!Number.isFinite(portNumber)) {
-    throw new Error('PROXY_PORT must be a valid number');
-  }
+  const proxyPortSpec = process.env.PROXY_PORT || '8000-8010';
+  const portSpec = parsePortSpec(proxyPortSpec);
+  const portNumber = await findAvailablePort(proxyHost, portSpec);
 
   const targetUrl = process.env.TARGET_URL;
   if (!targetUrl) {
@@ -81,7 +80,7 @@ async function main() {
   log.info(`Target: ${resolvedTargetUrl}`);
 
   const endpointSummary = [
-    `Proxy:  http://${proxyHost}:${proxyPort}/* to ${resolvedTargetUrl}`,
+    `Proxy:  http://${proxyHost}:${portNumber}/* to ${resolvedTargetUrl}`,
   ].join('\n');
 
   const startSpinner = spinner();
@@ -89,7 +88,7 @@ async function main() {
 
   createServer(config, {
     onListen: () => {
-      startSpinner.stop(`Server listening on http://${proxyHost}:${proxyPort}/viewer`);
+      startSpinner.stop(`Server listening on http://${proxyHost}:${portNumber}/viewer`);
       note(endpointSummary, 'Endpoints');
     },
   });
@@ -105,7 +104,8 @@ Usage:
 
 Options:
   --proxy-host <host>  Proxy host (default: localhost)
-  --proxy-port <port>  Proxy port (default: 8000)
+  --port <port>        Proxy port or range (default: 8000-8010)
+  --proxy-port <port>  Proxy port (alias of --port)
   --target <url>       Base target URL for proxying (required)
   --target-port <port> Override target URL port
   --home <dir>         Base directory for config/logs
@@ -158,6 +158,7 @@ function applyCliEnv(flags) {
   if (flags.logs) process.env.LOG_OUTPUT_DIR = String(flags.logs);
   if (flags['proxy-host']) process.env.PROXY_HOST = String(flags['proxy-host']);
   if (flags['proxy-port']) process.env.PROXY_PORT = String(flags['proxy-port']);
+  if (flags.port) process.env.PROXY_PORT = String(flags.port);
   if (flags.target) process.env.TARGET_URL = String(flags.target);
   if (flags['target-port']) process.env.TARGET_PORT = String(flags['target-port']);
 }
