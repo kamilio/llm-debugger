@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { intro, log, note, spinner, outro } from '@clack/prompts';
 import { createServer } from './server.js';
 import { getConfigPath, getHomeConfigPath, getLogsDir } from './paths.js';
+import { getConfigDisplayContent } from './config-file.js';
 import { loadConfig } from './config.js';
 
 async function main() {
@@ -18,6 +19,13 @@ async function main() {
 
   // Precedence: CLI flags > env vars > config file > defaults.
   applyCliEnv(flags);
+
+  const [command, subcommand, ...rest] = positionals;
+
+  if (command === 'config') {
+    runConfigCommand(subcommand, rest);
+    return;
+  }
 
   if (flags.init || positionals.includes('init')) {
     runInit(flags.force === true);
@@ -90,6 +98,7 @@ function printHelp() {
 Usage:
   llm-debugger [options]
   llm-debugger init [--force]
+  llm-debugger config show
 
 Options:
   --proxy-host <host>  Proxy host (default: localhost)
@@ -182,6 +191,17 @@ function runInit(force) {
   }
   log.success(`Copied config to ${targetPath}`);
   outro('Init complete.');
+}
+
+function runConfigCommand(subcommand) {
+  if (!subcommand || subcommand === 'show') {
+    const content = getConfigDisplayContent();
+    process.stdout.write(content);
+    return;
+  }
+
+  log.error(`Unknown config command: ${subcommand}`);
+  process.exitCode = 1;
 }
 
 main();
