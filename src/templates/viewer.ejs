@@ -101,23 +101,34 @@
         }
 
         .controls {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: 1fr auto;
             gap: 12px;
-            align-items: center;
+            align-items: end;
+            padding: 12px;
+            border-radius: 18px;
+            border: 1px solid var(--stroke);
+            background: var(--panel-alt);
+            box-shadow: var(--shadow-soft);
             position: relative;
             z-index: 1;
         }
 
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
         .field {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
+            display: grid;
+            gap: 6px;
+            padding: 10px 12px;
             border-radius: 14px;
             border: 1px solid var(--stroke);
             background: #fff;
             transition: border-color 180ms ease, box-shadow 180ms ease;
+            min-height: 54px;
         }
 
         .field:focus-within {
@@ -125,9 +136,17 @@
             box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.14);
         }
 
+        .field-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         label {
-            font-size: 0.85rem;
+            font-size: 0.68rem;
             color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         input,
@@ -141,12 +160,17 @@
             caret-color: var(--accent);
         }
 
+        input::placeholder {
+            color: rgba(93, 102, 112, 0.6);
+        }
+
         input[type="number"] {
-            width: 70px;
+            width: 84px;
         }
 
         input[type="text"] {
-            width: 180px;
+            width: 100%;
+            min-width: 0;
         }
 
         .btn {
@@ -160,6 +184,10 @@
             cursor: pointer;
             transition: transform 180ms ease, box-shadow 180ms ease;
             box-shadow: 0 10px 24px rgba(16, 163, 127, 0.28);
+            min-height: 44px;
+            justify-self: end;
+            align-self: end;
+            padding-inline: 20px;
         }
 
         .btn:hover {
@@ -231,6 +259,7 @@
             align-items: center;
             position: relative;
             z-index: 1;
+            font-variant-numeric: tabular-nums;
         }
 
         .method {
@@ -269,6 +298,8 @@
             background: var(--panel-alt);
             border: 1px solid var(--stroke);
             color: var(--muted);
+            white-space: nowrap;
+            line-height: 1;
         }
 
         .pill-link {
@@ -297,9 +328,11 @@
 
         .cta {
             margin-left: auto;
-            font-size: 0.85rem;
-            color: var(--accent-strong);
+            font-size: 0.72rem;
+            color: var(--muted);
             font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .muted {
@@ -311,6 +344,12 @@
             color: var(--muted);
             font-style: italic;
             padding: 6px 4px;
+        }
+
+        .btn:focus-visible,
+        .pill-link:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--focus);
         }
 
         @keyframes rise {
@@ -330,6 +369,15 @@
                 padding: 20px;
             }
 
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                width: 100%;
+                justify-self: stretch;
+            }
+
             .log-top {
                 align-items: flex-start;
             }
@@ -340,6 +388,20 @@
 
             .cta {
                 margin-left: 0;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+
+            .btn {
+                justify-self: stretch;
             }
         }
     </style>
@@ -356,16 +418,18 @@
                 <div class="controls">
                     <div class="field">
                         <label for="limit">Show</label>
-                        <input type="number" id="limit" value="<%= limit %>" min="1" max="100">
-                        <span class="muted">entries</span>
+                        <div class="field-inline">
+                            <input type="number" id="limit" value="<%= limit %>" min="1" max="100">
+                            <span class="muted">entries</span>
+                        </div>
                     </div>
                     <div class="field">
                         <label for="baseUrl">Base URL</label>
-                        <input type="text" id="baseUrl" placeholder="Type in URL e.g. api.poe.com" value="<%= (baseUrlFilters || []).join(',') %>">
+                        <input type="text" id="baseUrl" placeholder="Type something e.g. api.poe.com" value="<%= (baseUrlFilters || []).join(',') %>">
                     </div>
                     <div class="field">
                         <label for="method">Method</label>
-                        <input type="text" id="method" placeholder="Type in methods e.g. GET, POST" value="<%= (methodFilters || []).join(',') %>">
+                        <input type="text" id="method" placeholder="Type something e.g. GET, POST" value="<%= (methodFilters || []).join(',') %>">
                     </div>
                     <button class="btn" onclick="refresh()">Refresh</button>
                 </div>

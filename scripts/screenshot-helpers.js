@@ -7,6 +7,7 @@ import { getRecentLogs, logRequest } from '../src/logger.js';
 
 const TEST_HOME = resolve(process.cwd(), '.test-data');
 const SCREENSHOT_DIR = join(TEST_HOME, 'screenshots');
+const RANDOM_PORT_RANGE = { min: 42000, max: 60000, span: 32 };
 
 export function applyScreenshotEnv() {
   if (!process.env.LLM_DEBUGGER_HOME) {
@@ -19,7 +20,7 @@ export function applyScreenshotEnv() {
     process.env.PROXY_HOST = '127.0.0.1';
   }
   if (!process.env.PROXY_PORT) {
-    process.env.PROXY_PORT = '8000-8010';
+    process.env.PROXY_PORT = pickRandomPortRange();
   }
 }
 
@@ -72,6 +73,14 @@ export async function disableAnimations(page) {
 
 function ensureDir(pathname) {
   mkdirSync(pathname, { recursive: true });
+}
+
+function pickRandomPortRange() {
+  const { min, max, span } = RANDOM_PORT_RANGE;
+  const upperBound = Math.max(min, max - span);
+  const start = min + Math.floor(Math.random() * (upperBound - min + 1));
+  const end = start + span;
+  return `${start}-${end}`;
 }
 
 async function withSilentConsole(fn) {

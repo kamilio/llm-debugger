@@ -12,6 +12,7 @@ import { getPidFilePath } from '../src/paths.js';
 
 const START_TIMEOUT_MS = 5000;
 const STOP_TIMEOUT_MS = 5000;
+const FORCE_STOP_TIMEOUT_MS = 2000;
 const STOP_POLL_INTERVAL_MS = 100;
 
 const [command] = process.argv.slice(2);
@@ -116,7 +117,13 @@ async function stopDaemon() {
   }
   const exited = await waitForExit(pid, STOP_TIMEOUT_MS);
   if (!exited) {
-    throw new Error(`Process ${pid} did not exit after SIGTERM.`);
+    const forced = await forceKill(pid);
+    if (!forced) {
+      throw new Error(`Process ${pid} did not exit after SIGKILL.`);
+    }
+    safeUnlink(pidPath);
+    console.log(`Stopped llm-debugger (PID ${pid}) after SIGKILL.`);
+    return;
   }
 
   safeUnlink(pidPath);
@@ -164,11 +171,24 @@ async function runServer() {
       process.exit(1);
     });
 
-    process.on('SIGTERM', () => {
+    let shuttingDown = false;
+    const shutdown = () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      const timer = setTimeout(() => process.exit(0), STOP_TIMEOUT_MS);
+      timer.unref();
+      if (!server) {
+        process.exit(0);
+        return;
+      }
       server.close(() => {
+        clearTimeout(timer);
         process.exit(0);
       });
-    });
+    };
+
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
   } catch (error) {
     notifyParent({ type: 'error', message: error.message });
     if (!process.send) {
@@ -229,6 +249,17 @@ async function waitForExit(pid, timeoutMs) {
     await delay(STOP_POLL_INTERVAL_MS);
   }
   return !isProcessRunning(pid);
+}
+
+async function forceKill(pid) {
+  try {
+    process.kill(pid, 'SIGKILL');
+  } catch (error) {
+    if (error.code !== 'ESRCH') {
+      throw error;
+    }
+  }
+  return waitForExit(pid, FORCE_STOP_TIMEOUT_MS);
 }
 
 function waitForReady(child, timeoutMs) {
