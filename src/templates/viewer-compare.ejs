@@ -249,6 +249,7 @@
             display: grid;
             grid-template-columns: repeat(var(--columns, 2), minmax(260px, 1fr));
             gap: 16px;
+            align-items: start;
         }
 
         .summary-card,
@@ -260,6 +261,7 @@
             background: var(--panel);
             display: grid;
             gap: 12px;
+            align-content: start;
         }
 
         .summary-card {
@@ -345,6 +347,7 @@
             white-space: pre-wrap;
             word-break: break-word;
             font-family: "IBM Plex Mono", monospace;
+            align-self: start;
         }
 
         .diff-added {
@@ -432,12 +435,17 @@
             <% return String(value); %>
         <% } %>
     <% } %>
-    <% const sections = [
-        { key: 'requestHeaders', title: 'Request headers' },
-        { key: 'responseHeaders', title: 'Response headers' },
-        { key: 'requestBody', title: 'Request body' },
-        { key: 'responseBody', title: 'Response body' },
-    ]; %>
+    <% const sections = (compareSections && compareSections.length)
+        ? compareSections.map((section) => ({
+            key: section.key,
+            title: section.label || section.title,
+        }))
+        : [
+            { key: 'requestHeaders', title: 'Request headers' },
+            { key: 'responseHeaders', title: 'Response headers' },
+            { key: 'requestBody', title: 'Request body' },
+            { key: 'responseBody', title: 'Response body' },
+        ]; %>
     <div class="page">
         <div class="shell">
             <a class="back" href="<%= backLink %>">Back to viewer</a>
@@ -518,18 +526,13 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"></script>
     <script>
         window.COMPARE_LOGS = <%- JSON.stringify(logs || []).replace(/</g, '\\u003c') %>;
-
-        const SECTION_DEFS = [
-            { key: 'requestHeaders', label: 'Request headers', getter: (log) => log?.request?.headers },
-            { key: 'responseHeaders', label: 'Response headers', getter: (log) => log?.response?.headers },
-            { key: 'requestBody', label: 'Request body', getter: (log) => log?.request?.body },
-            { key: 'responseBody', label: 'Response body', getter: (log) => log?.response?.body },
-        ];
+        window.COMPARE_DATA = <%- JSON.stringify(compareData || {}).replace(/</g, '\\u003c') %>;
 
         const logs = Array.isArray(window.COMPARE_LOGS) ? window.COMPARE_LOGS : [];
+        const compareData = window.COMPARE_DATA || {};
+        const compareSections = Array.isArray(compareData.sections) ? compareData.sections : [];
         const collapsedSections = new Map();
         const sectionValues = new Map();
         const diffCache = new Map();
@@ -539,32 +542,6 @@
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;');
-        }
-
-        function normalizeValue(value) {
-            if (value === null || value === undefined) return '';
-            if (typeof value === 'string') return value;
-            if (typeof value !== 'object') return JSON.stringify(value, null, 2);
-
-            const seen = new WeakSet();
-            const normalize = (input) => {
-                if (input === null || input === undefined) return input;
-                if (typeof input !== 'object') return input;
-                if (seen.has(input)) return '[Circular]';
-                seen.add(input);
-                if (Array.isArray(input)) {
-                    return input.map((item) => normalize(item));
-                }
-                const sorted = {};
-                Object.keys(input)
-                    .sort()
-                    .forEach((key) => {
-                        sorted[key] = normalize(input[key]);
-                    });
-                return sorted;
-            };
-
-            return JSON.stringify(normalize(value), null, 2);
         }
 
         function diffToHtml(parts) {
@@ -609,34 +586,28 @@
         }
 
         function renderDiffs() {
-            if (!window.Diff || !logs.length) return;
+            if (!compareSections.length || !logs.length) return;
 
-            SECTION_DEFS.forEach((section) => {
-                const values = logs.map((log) => normalizeValue(section.getter(log)));
+            compareSections.forEach((section) => {
+                const values = Array.isArray(section.values) ? section.values : [];
+                const diffs = Array.isArray(section.diffs) ? section.diffs : [];
                 sectionValues.set(section.key, values);
-
-                const baseValue = values[0] || '';
-                const sectionDiffs = [];
+                diffCache.set(section.key, diffs);
 
                 values.forEach((value, index) => {
-                    const diffParts = Diff.diffLines(baseValue, value || '');
-                    sectionDiffs[index] = diffParts;
-
                     const target = document.querySelector(
                         `pre[data-section="${section.key}"][data-log-index="${index}"]`
                     );
                     if (!target) return;
-                    if (!value && !baseValue) {
+                    const diffParts = diffs[index] || [];
+                    if (!value && !values[0]) {
                         target.innerHTML = '<span class="diff-empty">No data</span>';
                         return;
                     }
                     target.innerHTML = diffToHtml(diffParts) || '<span class="diff-empty">No data</span>';
                 });
 
-                diffCache.set(section.key, sectionDiffs);
-
-                const allSame = values.every((value) => value === values[0]);
-                setSectionCollapsed(section.key, allSame);
+                setSectionCollapsed(section.key, Boolean(section.allSame));
             });
         }
 
@@ -694,8 +665,8 @@
             });
             lines.push('');
 
-            SECTION_DEFS.forEach((section) => {
-                lines.push(`## ${section.label}`);
+            compareSections.forEach((section) => {
+                lines.push(`## ${section.label || section.title || ''}`);
                 lines.push('');
                 const values = sectionValues.get(section.key) || [];
                 lines.push('### Log 1 (baseline)');

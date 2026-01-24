@@ -7,6 +7,7 @@ import {
     resolveViewerLogPath,
     deleteViewerLog,
     parseCompareLogSelection,
+    buildCompareData,
 } from '../src/services/viewer-service.js';
 
 describe('resolveViewerLogPath', () => {
@@ -133,5 +134,45 @@ describe('parseCompareLogSelection', () => {
             ],
             invalid: ['openai/d.yaml'],
         });
+    });
+});
+
+describe('buildCompareData', () => {
+    it('builds diffs and detects identical sections', () => {
+        const logs = [
+            {
+                request: {
+                    headers: { Authorization: 'token-a' },
+                    body: { prompt: 'Hello' },
+                },
+                response: {
+                    headers: { 'content-type': 'application/json' },
+                    body: { result: 'One' },
+                    status: 200,
+                },
+            },
+            {
+                request: {
+                    headers: { Authorization: 'token-b' },
+                    body: { prompt: 'Hello' },
+                },
+                response: {
+                    headers: { 'content-type': 'application/json' },
+                    body: { result: 'Two' },
+                    status: 200,
+                },
+            },
+        ];
+
+        const compareData = buildCompareData(logs);
+        const requestHeaders = compareData.sections.find((section) => section.key === 'requestHeaders');
+        const requestBody = compareData.sections.find((section) => section.key === 'requestBody');
+
+        assert.strictEqual(requestHeaders.allSame, false);
+        assert.strictEqual(requestBody.allSame, true);
+        assert.strictEqual(typeof requestHeaders.values[0], 'string');
+        assert.ok(
+            requestHeaders.diffs[1].some((part) => part.added || part.removed)
+        );
     });
 });

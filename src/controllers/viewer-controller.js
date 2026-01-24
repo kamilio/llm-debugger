@@ -2,6 +2,8 @@ import { shouldHideFromViewer } from '../config.js';
 import { renderViewer, renderViewerDetail, renderViewerCompare } from '../viewer.js';
 import {
   buildBackLink,
+  buildCompareData,
+  COMPARE_SECTIONS,
   deleteViewerLog,
   getViewerIndexData,
   loadViewerLog,
@@ -101,7 +103,13 @@ export function createViewerController(config) {
           const message = invalid.length
             ? 'Invalid compare selection. Choose two or three valid log entries.'
             : 'Select at least two logs to compare.';
-          const html = await renderViewerCompare({ logs: [], backLink, error: message });
+          const html = await renderViewerCompare({
+            logs: [],
+            backLink,
+            error: message,
+            compareData: { sections: [] },
+            compareSections: COMPARE_SECTIONS,
+          });
           res.status(400).type('html').send(html);
           return;
         }
@@ -129,7 +137,14 @@ export function createViewerController(config) {
           }
         }
 
-        const html = await renderViewerCompare({ logs, backLink, error: null });
+        const compareData = buildCompareData(logs);
+        const html = await renderViewerCompare({
+          logs,
+          backLink,
+          error: null,
+          compareData,
+          compareSections: COMPARE_SECTIONS,
+        });
         res.type('html').send(html);
       } catch (error) {
         console.error('Viewer compare error:', error.message);

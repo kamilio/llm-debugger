@@ -102,7 +102,7 @@
 
         .controls {
             display: grid;
-            grid-template-columns: 1fr auto auto;
+            grid-template-columns: 1fr auto;
             gap: 12px;
             align-items: end;
             padding: 12px;
@@ -118,6 +118,15 @@
             display: grid;
             grid-template-columns: repeat(3, minmax(160px, 1fr));
             gap: 12px;
+        }
+
+        .control-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: flex-end;
+            align-self: end;
         }
 
         .field {
@@ -457,6 +466,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .control-actions {
+                justify-content: stretch;
+            }
+
             .btn {
                 width: 100%;
                 justify-self: stretch;
@@ -489,8 +502,8 @@
                 grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             }
 
-            .btn {
-                justify-self: stretch;
+            .control-actions {
+                justify-content: stretch;
             }
         }
     </style>
@@ -505,23 +518,27 @@
                     <p class="subtitle">Scan recent proxy traffic and open a full request timeline.</p>
                 </div>
                 <div class="controls">
-                    <div class="field">
-                        <label for="limit">Show</label>
-                        <div class="field-inline">
-                            <input type="number" id="limit" value="<%= limit %>" min="1" max="100">
-                            <span class="muted">entries</span>
+                    <div class="filters">
+                        <div class="field">
+                            <label for="limit">Show</label>
+                            <div class="field-inline">
+                                <input type="number" id="limit" value="<%= limit %>" min="1" max="100">
+                                <span class="muted">entries</span>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="baseUrl">Base URL</label>
+                            <input type="text" id="baseUrl" placeholder="Type something e.g. api.poe.com" value="<%= (baseUrlFilters || []).join(',') %>">
+                        </div>
+                        <div class="field">
+                            <label for="method">Method</label>
+                            <input type="text" id="method" placeholder="Type something e.g. GET, POST" value="<%= (methodFilters || []).join(',') %>">
                         </div>
                     </div>
-                    <div class="field">
-                        <label for="baseUrl">Base URL</label>
-                        <input type="text" id="baseUrl" placeholder="Type something e.g. api.poe.com" value="<%= (baseUrlFilters || []).join(',') %>">
+                    <div class="control-actions">
+                        <button class="btn secondary" id="compare-toggle" type="button">Compare</button>
+                        <button class="btn" onclick="refresh()" type="button">Refresh</button>
                     </div>
-                    <div class="field">
-                        <label for="method">Method</label>
-                        <input type="text" id="method" placeholder="Type something e.g. GET, POST" value="<%= (methodFilters || []).join(',') %>">
-                    </div>
-                    <button class="btn secondary" id="compare-toggle" type="button">Compare</button>
-                    <button class="btn" onclick="refresh()" type="button">Refresh</button>
                 </div>
             </header>
 

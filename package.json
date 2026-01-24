@@ -53,6 +53,7 @@
   ],
   "dependencies": {
     "@clack/prompts": "^0.11.0",
+    "diff": "^8.0.3",
     "dotenv": "^16.6.1",
     "ejs": "^3.1.9",
     "express": "^4.18.2",

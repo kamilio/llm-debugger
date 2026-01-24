@@ -1,10 +1,34 @@
 import { readFile, unlink } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
+import { diffLines } from 'diff';
 import yaml from 'js-yaml';
 import { getRecentLogs } from '../logger.js';
 import { parseCsvParam } from '../viewer-filters.js';
 
 const SAFE_SEGMENT = /^[a-zA-Z0-9._-]+$/;
+
+export const COMPARE_SECTIONS = [
+  {
+    key: 'requestHeaders',
+    label: 'Request headers',
+    getter: (log) => log?.request?.headers,
+  },
+  {
+    key: 'responseHeaders',
+    label: 'Response headers',
+    getter: (log) => log?.response?.headers,
+  },
+  {
+    key: 'requestBody',
+    label: 'Request body',
+    getter: (log) => log?.request?.body,
+  },
+  {
+    key: 'responseBody',
+    label: 'Response body',
+    getter: (log) => log?.response?.body,
+  },
+];
 
 export async function getViewerIndexData(outputDir, { limit, provider, baseUrls, methods }) {
   const logs = await getRecentLogs(outputDir, {
@@ -66,6 +90,24 @@ export function buildBackLink(query) {
   return search ? `/__viewer__?${search}` : '/__viewer__';
 }
 
+export function buildCompareData(logs) {
+  const entries = Array.isArray(logs) ? logs : [];
+  const sections = COMPARE_SECTIONS.map((section) => {
+    const values = entries.map((log) => normalizeCompareValue(section.getter(log)));
+    const baseValue = values[0] || '';
+    const diffs = values.map((value) => diffLines(baseValue, value || ''));
+    const allSame = values.every((value) => value === values[0]);
+    return {
+      key: section.key,
+      label: section.label,
+      values,
+      diffs,
+      allSame,
+    };
+  });
+  return { sections };
+}
+
 export function parseCompareLogSelection(value, { max = 3 } = {}) {
   const selections = [];
   const invalid = [];
@@ -95,6 +137,32 @@ export function parseCompareLogSelection(value, { max = 3 } = {}) {
   }
 
   return { selections, invalid };
+}
+
+function normalizeCompareValue(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value !== 'object') return JSON.stringify(value, null, 2);
+
+  const seen = new WeakSet();
+  const normalize = (input) => {
+    if (input === null || input === undefined) return input;
+    if (typeof input !== 'object') return input;
+    if (seen.has(input)) return '[Circular]';
+    seen.add(input);
+    if (Array.isArray(input)) {
+      return input.map((item) => normalize(item));
+    }
+    const sorted = {};
+    Object.keys(input)
+      .sort()
+      .forEach((key) => {
+        sorted[key] = normalize(input[key]);
+      });
+    return sorted;
+  };
+
+  return JSON.stringify(normalize(value), null, 2);
 }
 
 function isSafeSegment(value) {

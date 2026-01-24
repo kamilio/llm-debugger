@@ -67,11 +67,19 @@ export async function renderViewerDetail(log, backLink, preview) {
   });
 }
 
-export async function renderViewerCompare({ logs, backLink, error }) {
+export async function renderViewerCompare({
+  logs,
+  backLink,
+  error,
+  compareData,
+  compareSections,
+}) {
   const template = await getCompareTemplate();
   return ejs.render(template, {
     logs,
     backLink,
     error,
+    compareData,
+    compareSections,
   });
 }
