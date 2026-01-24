@@ -171,6 +171,75 @@
             box-shadow: none;
         }
 
+        .timeline {
+            padding: 18px 20px;
+            border-radius: 20px;
+            border: 1px solid var(--stroke);
+            background: var(--panel);
+            box-shadow: var(--shadow-soft);
+            display: grid;
+            gap: 12px;
+        }
+
+        .timeline-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+        }
+
+        .timeline-row {
+            position: relative;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timeline-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 2px;
+            background: var(--stroke);
+            transform: translateY(-50%);
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: var(--position, 50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: var(--accent);
+            border: 2px solid #fff;
+            box-shadow: 0 6px 12px rgba(16, 163, 127, 0.2);
+            transform: translate(-50%, -50%);
+            top: 50%;
+            z-index: 1;
+        }
+
+        .timeline-bar {
+            position: absolute;
+            left: var(--position, 50%);
+            height: 4px;
+            width: var(--duration, 24px);
+            background: rgba(16, 163, 127, 0.35);
+            border-radius: 999px;
+            transform: translateY(-50%);
+            top: 50%;
+        }
+
+        .timeline-label {
+            position: absolute;
+            left: calc(var(--position, 50%) + 14px);
+            font-size: 0.75rem;
+            color: var(--muted);
+            white-space: nowrap;
+            top: 4px;
+        }
+
         .compare-scroll {
             overflow-x: auto;
             padding-bottom: 12px;
@@ -247,6 +316,22 @@
             font-size: 0.95rem;
         }
 
+        .section-toggle {
+            border: 1px solid var(--stroke);
+            background: #fff;
+            color: var(--accent-strong);
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            cursor: pointer;
+        }
+
+        .section-toggle:hover {
+            box-shadow: 0 8px 18px rgba(16, 163, 127, 0.18);
+            transform: translateY(-1px);
+        }
+
         pre {
             margin: 0;
             background: var(--code-bg);
@@ -259,6 +344,42 @@
             line-height: 1.6;
             white-space: pre-wrap;
             word-break: break-word;
+            font-family: "IBM Plex Mono", monospace;
+        }
+
+        .diff-added {
+            background: rgba(26, 127, 74, 0.2);
+            color: #13633b;
+        }
+
+        .diff-removed {
+            background: rgba(179, 38, 30, 0.16);
+            color: #7e1f18;
+            text-decoration: line-through;
+        }
+
+        .diff-neutral {
+            color: var(--code-ink);
+        }
+
+        .diff-empty {
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        .compare-section.is-collapsed pre {
+            display: none;
+        }
+
+        .collapsed-note {
+            display: none;
+            font-size: 0.8rem;
+            color: var(--muted);
+            padding: 6px 0 2px;
+        }
+
+        .compare-section.is-collapsed .collapsed-note {
+            display: block;
         }
 
         .empty {
@@ -271,7 +392,8 @@
         }
 
         .btn:focus-visible,
-        .back:focus-visible {
+        .back:focus-visible,
+        .section-toggle:focus-visible {
             outline: none;
             box-shadow: 0 0 0 3px var(--focus);
         }
@@ -326,7 +448,7 @@
                         <h1 class="title">Compare logs</h1>
                         <p class="subtitle">Inspect up to three requests side-by-side.</p>
                     </div>
-                    <button class="btn secondary" type="button" disabled>Copy Markdown</button>
+                    <button class="btn secondary" id="copy-markdown" type="button">Copy Markdown</button>
                 </div>
                 <% if (logs && logs.length) { %>
                     <div class="pill-group">
@@ -339,6 +461,21 @@
             <% if (error) { %>
                 <section class="empty"><%= error %></section>
             <% } else { %>
+                <% if (logs && logs.length) { %>
+                    <section class="timeline" aria-label="Request timeline">
+                        <div class="timeline-title">Request timeline</div>
+                        <% logs.forEach((log, index) => { %>
+                            <div class="timeline-row"
+                                data-timestamp="<%= log.timestamp %>"
+                                data-duration="<%= log.duration_ms || 0 %>">
+                                <span class="timeline-line"></span>
+                                <span class="timeline-dot"></span>
+                                <span class="timeline-bar"></span>
+                                <span class="timeline-label">Log <%= index + 1 %> · <%= new Date(log.timestamp).toLocaleTimeString() %> · <%= log.duration_ms || 0 %>ms</span>
+                            </div>
+                        <% }) %>
+                    </section>
+                <% } %>
                 <section class="compare-scroll">
                     <div class="compare-grid" style="--columns: <%= logs.length %>;">
                         <% logs.forEach((log, index) => { %>
@@ -359,18 +496,19 @@
                         <% }) %>
 
                         <% sections.forEach((section) => { %>
-                            <% logs.forEach((log) => { %>
-                                <section class="compare-section">
+                            <% logs.forEach((log, index) => { %>
+                                <section class="compare-section" data-section="<%= section.key %>" data-log-index="<%= index %>">
                                     <div class="section-header">
                                         <h3><%= section.title %></h3>
-                                        <span class="muted">View raw</span>
+                                        <button class="section-toggle" type="button" data-section="<%= section.key %>">Collapse</button>
                                     </div>
-                                    <pre><code><%= formatSection(
+                                    <div class="collapsed-note">Identical across logs. Click to expand.</div>
+                                    <pre data-section="<%= section.key %>" data-log-index="<%= index %>"><%= formatSection(
                                         section.key === 'requestHeaders' ? log?.request?.headers :
                                         section.key === 'responseHeaders' ? log?.response?.headers :
                                         section.key === 'requestBody' ? log?.request?.body :
                                         log?.response?.body
-                                    ) %></code></pre>
+                                    ) %></pre>
                                 </section>
                             <% }) %>
                         <% }) %>
@@ -379,5 +517,234 @@
             <% } %>
         </div>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff/5.2.0/diff.min.js"></script>
+    <script>
+        window.COMPARE_LOGS = <%- JSON.stringify(logs || []).replace(/</g, '\\u003c') %>;
+
+        const SECTION_DEFS = [
+            { key: 'requestHeaders', label: 'Request headers', getter: (log) => log?.request?.headers },
+            { key: 'responseHeaders', label: 'Response headers', getter: (log) => log?.response?.headers },
+            { key: 'requestBody', label: 'Request body', getter: (log) => log?.request?.body },
+            { key: 'responseBody', label: 'Response body', getter: (log) => log?.response?.body },
+        ];
+
+        const logs = Array.isArray(window.COMPARE_LOGS) ? window.COMPARE_LOGS : [];
+        const collapsedSections = new Map();
+        const sectionValues = new Map();
+        const diffCache = new Map();
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function normalizeValue(value) {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'string') return value;
+            if (typeof value !== 'object') return JSON.stringify(value, null, 2);
+
+            const seen = new WeakSet();
+            const normalize = (input) => {
+                if (input === null || input === undefined) return input;
+                if (typeof input !== 'object') return input;
+                if (seen.has(input)) return '[Circular]';
+                seen.add(input);
+                if (Array.isArray(input)) {
+                    return input.map((item) => normalize(item));
+                }
+                const sorted = {};
+                Object.keys(input)
+                    .sort()
+                    .forEach((key) => {
+                        sorted[key] = normalize(input[key]);
+                    });
+                return sorted;
+            };
+
+            return JSON.stringify(normalize(value), null, 2);
+        }
+
+        function diffToHtml(parts) {
+            return parts
+                .map((part) => {
+                    const className = part.added
+                        ? 'diff-added'
+                        : part.removed
+                            ? 'diff-removed'
+                            : 'diff-neutral';
+                    return `<span class="${className}">${escapeHtml(part.value)}</span>`;
+                })
+                .join('');
+        }
+
+        function diffToMarkdown(parts) {
+            return parts
+                .map((part) => {
+                    const prefix = part.added ? '+' : part.removed ? '-' : ' ';
+                    return part.value
+                        .split('\n')
+                        .map((line, index, lines) => {
+                            if (index === lines.length - 1 && line === '') return null;
+                            return `${prefix}${line}`;
+                        })
+                        .filter(Boolean)
+                        .join('\n');
+                })
+                .filter(Boolean)
+                .join('\n');
+        }
+
+        function setSectionCollapsed(sectionKey, collapsed) {
+            collapsedSections.set(sectionKey, collapsed);
+            document.querySelectorAll(`.compare-section[data-section="${sectionKey}"]`).forEach((section) => {
+                section.classList.toggle('is-collapsed', collapsed);
+            });
+            document.querySelectorAll(`.section-toggle[data-section="${sectionKey}"]`).forEach((button) => {
+                button.textContent = collapsed ? 'Expand' : 'Collapse';
+                button.setAttribute('aria-expanded', String(!collapsed));
+            });
+        }
+
+        function renderDiffs() {
+            if (!window.Diff || !logs.length) return;
+
+            SECTION_DEFS.forEach((section) => {
+                const values = logs.map((log) => normalizeValue(section.getter(log)));
+                sectionValues.set(section.key, values);
+
+                const baseValue = values[0] || '';
+                const sectionDiffs = [];
+
+                values.forEach((value, index) => {
+                    const diffParts = Diff.diffLines(baseValue, value || '');
+                    sectionDiffs[index] = diffParts;
+
+                    const target = document.querySelector(
+                        `pre[data-section="${section.key}"][data-log-index="${index}"]`
+                    );
+                    if (!target) return;
+                    if (!value && !baseValue) {
+                        target.innerHTML = '<span class="diff-empty">No data</span>';
+                        return;
+                    }
+                    target.innerHTML = diffToHtml(diffParts) || '<span class="diff-empty">No data</span>';
+                });
+
+                diffCache.set(section.key, sectionDiffs);
+
+                const allSame = values.every((value) => value === values[0]);
+                setSectionCollapsed(section.key, allSame);
+            });
+        }
+
+        function setupSectionToggles() {
+            document.querySelectorAll('.section-toggle').forEach((button) => {
+                const sectionKey = button.dataset.section;
+                if (!sectionKey) return;
+                button.addEventListener('click', () => {
+                    const isCollapsed = collapsedSections.get(sectionKey);
+                    setSectionCollapsed(sectionKey, !isCollapsed);
+                });
+            });
+        }
+
+        function renderTimeline() {
+            const rows = Array.from(document.querySelectorAll('.timeline-row'));
+            if (!rows.length) return;
+
+            const timestamps = rows.map((row) => Date.parse(row.dataset.timestamp || '') || 0);
+            const durations = rows.map((row) => Number(row.dataset.duration || 0));
+            const min = Math.min(...timestamps);
+            const max = Math.max(...timestamps);
+            const range = Math.max(max - min, 1);
+            const maxDuration = Math.max(...durations, 1);
+
+            rows.forEach((row, index) => {
+                let position;
+                if (max === min) {
+                    position = ((index + 1) / (rows.length + 1)) * 100;
+                } else {
+                    position = ((timestamps[index] - min) / range) * 100;
+                }
+                position = Math.min(96, Math.max(4, position));
+                row.style.setProperty('--position', `${position}%`);
+
+                const durationWidth = Math.max(18, Math.round((durations[index] / maxDuration) * 120));
+                row.style.setProperty('--duration', `${durationWidth}px`);
+            });
+        }
+
+        function buildMarkdown() {
+            const lines = [];
+            lines.push('# Log comparison');
+            lines.push('');
+            lines.push('## Summary');
+            lines.push('| Log | Method | Status | Duration | Timestamp | URL |');
+            lines.push('| --- | --- | --- | --- | --- | --- |');
+            logs.forEach((log, index) => {
+                const method = log?.request?.method || '';
+                const status = log?.response?.status ?? '';
+                const duration = `${log?.duration_ms || 0}ms`;
+                const timestamp = log?.timestamp ? new Date(log.timestamp).toLocaleString() : '';
+                const url = (log?.request?.url || '').replace(/\|/g, '\\|');
+                lines.push(`| ${index + 1} | ${method} | ${status} | ${duration} | ${timestamp} | ${url} |`);
+            });
+            lines.push('');
+
+            SECTION_DEFS.forEach((section) => {
+                lines.push(`## ${section.label}`);
+                lines.push('');
+                const values = sectionValues.get(section.key) || [];
+                lines.push('### Log 1 (baseline)');
+                lines.push('```json');
+                lines.push(values[0] || '');
+                lines.push('```');
+                lines.push('');
+
+                for (let i = 1; i < logs.length; i += 1) {
+                    lines.push(`### Log ${i + 1} diff vs Log 1`);
+                    lines.push('```diff');
+                    const diffParts = diffCache.get(section.key)?.[i] || [];
+                    const diffText = diffToMarkdown(diffParts);
+                    lines.push(diffText || '');
+                    lines.push('```');
+                    lines.push('');
+                }
+            });
+
+            return lines.join('\n');
+        }
+
+        function setupMarkdownCopy() {
+            const button = document.getElementById('copy-markdown');
+            if (!button) return;
+
+            button.addEventListener('click', () => {
+                const markdown = buildMarkdown();
+                if (!markdown) return;
+                navigator.clipboard.writeText(markdown).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    button.style.background = 'rgba(47, 138, 74, 0.15)';
+                    button.style.color = '#1f6a36';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                        button.style.color = '';
+                    }, 2000);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDiffs();
+            setupSectionToggles();
+            renderTimeline();
+            setupMarkdownCopy();
+        });
+    </script>
 </body>
 </html>

@@ -102,7 +102,7 @@
 
         .controls {
             display: grid;
-            grid-template-columns: 1fr auto;
+            grid-template-columns: 1fr auto auto;
             gap: 12px;
             align-items: end;
             padding: 12px;
@@ -190,6 +190,13 @@
             padding-inline: 20px;
         }
 
+        .btn.secondary {
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--stroke);
+            box-shadow: none;
+        }
+
         .btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 16px 32px rgba(16, 163, 127, 0.32);
@@ -225,6 +232,79 @@
             cursor: pointer;
             outline: none;
             transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        }
+
+        .log-card.is-selected {
+            border-color: rgba(16, 163, 127, 0.5);
+            box-shadow: 0 14px 28px rgba(16, 163, 127, 0.18);
+        }
+
+        .compare-check {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 28px;
+            height: 28px;
+            border-radius: 10px;
+            border: 1px solid var(--stroke);
+            background: #fff;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            transition: border-color 160ms ease, box-shadow 160ms ease;
+        }
+
+        .compare-check input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .compare-indicator {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            border: 2px solid var(--accent);
+            background: transparent;
+            transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+        }
+
+        .compare-check input:checked + .compare-indicator {
+            background: var(--accent);
+            box-shadow: 0 0 0 4px rgba(16, 163, 127, 0.16);
+            transform: scale(0.95);
+        }
+
+        .compare-check.is-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .compare-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 20px;
+            border-radius: 20px;
+            border: 1px solid var(--stroke);
+            background: var(--panel);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .compare-bar.is-active {
+            display: flex;
+        }
+
+        .compare-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .compare-subtitle {
+            font-size: 0.85rem;
+            color: var(--muted);
         }
 
         .log-card:focus-visible {
@@ -352,6 +432,10 @@
             box-shadow: 0 0 0 3px var(--focus);
         }
 
+        body.compare-active .compare-check {
+            display: flex;
+        }
+
         @keyframes rise {
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: translateY(0); }
@@ -376,6 +460,11 @@
             .btn {
                 width: 100%;
                 justify-self: stretch;
+            }
+
+            .compare-bar {
+                flex-direction: column;
+                align-items: stretch;
             }
 
             .log-top {
@@ -431,9 +520,18 @@
                         <label for="method">Method</label>
                         <input type="text" id="method" placeholder="Type something e.g. GET, POST" value="<%= (methodFilters || []).join(',') %>">
                     </div>
-                    <button class="btn" onclick="refresh()">Refresh</button>
+                    <button class="btn secondary" id="compare-toggle" type="button">Compare</button>
+                    <button class="btn" onclick="refresh()" type="button">Refresh</button>
                 </div>
             </header>
+
+            <div class="compare-bar" id="compare-bar" aria-live="polite">
+                <div>
+                    <div class="compare-title">Compare mode</div>
+                    <div class="compare-subtitle">Select 2-3 logs to compare.</div>
+                </div>
+                <button class="btn" id="compare-submit" type="button" disabled>Compare Selected</button>
+            </div>
 
             <section class="logs">
                 <% if (logs.length === 0) { %>
@@ -460,9 +558,15 @@
                             <article class="log-card"
                                 style="animation-delay: <%= index * 45 %>ms"
                                 data-href="/__viewer__/<%= encodeURIComponent(log._viewer_provider || providerName) %>/<%= encodeURIComponent(log._viewer_file || '') %><%= backQuery %>"
+                                data-provider="<%= log._viewer_provider || providerName %>"
+                                data-filename="<%= log._viewer_file || '' %>"
                                 role="link"
                                 tabindex="0"
                                 aria-label="Open <%= log.request.method %> <%= log.request.url %>">
+                                <label class="compare-check">
+                                    <input class="compare-input" type="checkbox" aria-label="Select log for compare">
+                                    <span class="compare-indicator"></span>
+                                </label>
                                 <div class="log-top">
                                     <span class="method <%= log.request.method.toLowerCase() %>"><%= log.request.method %></span>
                                     <span class="url"><%= log.request.url %></span>
@@ -514,18 +618,140 @@
             }
         });
 
+        const compareToggle = document.getElementById('compare-toggle');
+        const compareBar = document.getElementById('compare-bar');
+        const compareSubmit = document.getElementById('compare-submit');
+        const compareInputs = Array.from(document.querySelectorAll('.compare-input'));
+        const compareCards = Array.from(document.querySelectorAll('.log-card[data-provider][data-filename]'));
+        const selectionLimit = 3;
+        let compareActive = false;
+
+        function getSelectedCards() {
+            return compareCards.filter((card) => card.querySelector('.compare-input')?.checked);
+        }
+
+        function updateCompareState() {
+            if (!compareToggle || !compareBar || !compareSubmit) return;
+            document.body.classList.toggle('compare-active', compareActive);
+            compareBar.classList.toggle('is-active', compareActive);
+            compareToggle.textContent = compareActive ? 'Cancel' : 'Compare';
+
+            const selectedCards = getSelectedCards();
+            const selectedCount = selectedCards.length;
+
+            compareSubmit.disabled = selectedCount < 2 || selectedCount > selectionLimit;
+            compareSubmit.textContent = selectedCount >= 2
+                ? `Compare Selected (${selectedCount})`
+                : 'Compare Selected';
+
+            compareCards.forEach((card) => {
+                const input = card.querySelector('.compare-input');
+                const wrapper = card.querySelector('.compare-check');
+                if (!input) return;
+                card.classList.toggle('is-selected', input.checked);
+                if (compareActive && selectedCount >= selectionLimit && !input.checked) {
+                    input.disabled = true;
+                    if (wrapper) wrapper.classList.add('is-disabled');
+                } else {
+                    input.disabled = false;
+                    if (wrapper) wrapper.classList.remove('is-disabled');
+                }
+            });
+        }
+
+        function resetCompareSelection() {
+            compareInputs.forEach((input) => {
+                input.checked = false;
+                input.disabled = false;
+            });
+            compareCards.forEach((card) => card.classList.remove('is-selected'));
+        }
+
+        function toggleCardSelection(card) {
+            const input = card.querySelector('.compare-input');
+            if (!input || input.disabled) return;
+            input.checked = !input.checked;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function buildCompareUrl() {
+            const selectedCards = getSelectedCards();
+            if (selectedCards.length < 2) return null;
+
+            const selections = selectedCards
+                .map((card) => {
+                    const provider = card.dataset.provider || 'unknown';
+                    const filename = card.dataset.filename || '';
+                    if (!filename) return null;
+                    return `${encodeURIComponent(provider)}/${encodeURIComponent(filename)}`;
+                })
+                .filter(Boolean);
+
+            if (selections.length < 2) return null;
+
+            const params = new URLSearchParams();
+            params.set('logs', selections.join(','));
+
+            const limit = document.getElementById('limit').value;
+            const baseUrl = document.getElementById('baseUrl').value;
+            const method = document.getElementById('method').value;
+
+            if (limit) {
+                params.set('limit', limit);
+            }
+            if (baseUrl) {
+                params.set('baseUrl', baseUrl);
+            }
+            if (method) {
+                params.set('method', method);
+            }
+
+            return '/__viewer__/compare?' + params.toString();
+        }
+
+        if (compareToggle && compareBar && compareSubmit) {
+            compareToggle.addEventListener('click', () => {
+                compareActive = !compareActive;
+                if (!compareActive) {
+                    resetCompareSelection();
+                }
+                updateCompareState();
+            });
+
+            compareInputs.forEach((input) => {
+                input.addEventListener('click', (event) => event.stopPropagation());
+                input.addEventListener('change', () => updateCompareState());
+            });
+
+            compareSubmit.addEventListener('click', () => {
+                const url = buildCompareUrl();
+                if (!url) return;
+                window.location.href = url;
+            });
+
+            updateCompareState();
+        }
+
         document.querySelectorAll('.log-card[data-href]').forEach((card) => {
             const href = card.dataset.href;
             if (!href) return;
-            const isInteractiveTarget = (event) => event.target.closest('a');
+            const isInteractiveTarget = (event) => event.target.closest('a, .compare-check');
             card.addEventListener('click', (event) => {
                 if (isInteractiveTarget(event)) return;
+                if (compareActive) {
+                    toggleCardSelection(card);
+                    return;
+                }
                 window.location.href = href;
             });
             card.addEventListener('keydown', (event) => {
                 if (isInteractiveTarget(event)) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
+                    if (compareActive) {
+                        toggleCardSelection(card);
+                        return;
+                    }
                     window.location.href = href;
                 }
             });
