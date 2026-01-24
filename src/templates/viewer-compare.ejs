@@ -236,6 +236,53 @@
             color: rgba(29, 31, 35, 0.7);
         }
 
+        .baseline-group {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .baseline-label {
+            background: rgba(16, 163, 127, 0.12);
+            color: var(--accent-strong);
+        }
+
+        .baseline-select {
+            border: 1px solid var(--stroke);
+            border-radius: 999px;
+            padding: 6px 28px 6px 12px;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+            background-color: #fff;
+            color: var(--ink);
+            appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, rgba(93, 102, 112, 0.8) 50%),
+                linear-gradient(135deg, rgba(93, 102, 112, 0.8) 50%, transparent 50%);
+            background-position: right 14px center, right 9px center;
+            background-size: 6px 6px;
+            background-repeat: no-repeat;
+            cursor: pointer;
+        }
+
+        .baseline-select:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px var(--focus);
+        }
+
+        .summary-card.is-baseline {
+            border-color: rgba(16, 163, 127, 0.45);
+            box-shadow: 0 16px 30px rgba(16, 163, 127, 0.12);
+        }
+
+        .baseline-chip {
+            background: rgba(16, 163, 127, 0.16);
+            color: var(--accent-strong);
+        }
+
         .compare-scroll {
             overflow-x: auto;
             padding-bottom: 12px;
@@ -442,6 +489,9 @@
             { key: 'requestBody', title: 'Request body' },
             { key: 'responseBody', title: 'Response body' },
         ]; %>
+    <% const baseline = Number.isFinite(baselineIndex)
+        ? baselineIndex
+        : (compareData && Number.isFinite(compareData.baselineIndex) ? compareData.baselineIndex : 0); %>
     <div class="page">
         <div class="shell">
             <a class="back" href="<%= backLink %>">Back to viewer</a>
@@ -455,9 +505,16 @@
                     <button class="btn secondary" id="copy-markdown" type="button">Copy Markdown</button>
                 </div>
                 <% if (logs && logs.length) { %>
-                    <div class="pill-group">
+                    <div class="pill-group baseline-group">
                         <span class="pill"><%= logs.length %> selected</span>
-                        <span class="pill">Baseline: Log 1</span>
+                        <span class="pill baseline-label">Baseline</span>
+                        <select id="baseline-select" class="baseline-select" aria-label="Baseline log">
+                            <% logs.forEach((log, index) => { %>
+                                <option value="<%= index + 1 %>" <%= index === baseline ? 'selected' : '' %>>
+                                    Log <%= index + 1 %> · <%= log.request.method %> <%= log.response.status %>
+                                </option>
+                            <% }) %>
+                        </select>
                     </div>
                 <% } %>
             </section>
@@ -487,11 +544,15 @@
                     <div class="compare-grid" style="--columns: <%= logs.length %>;">
                         <% logs.forEach((log, index) => { %>
                             <% const providerName = log.provider || 'unknown'; %>
-                            <article class="summary-card">
+                            <% const isBaseline = index === baseline; %>
+                            <article class="summary-card <%= isBaseline ? 'is-baseline' : '' %>">
                                 <div class="summary-header">
                                     <span class="pill">Log <%= index + 1 %></span>
                                     <span class="pill <%= (log.request.method || '').toLowerCase() %>"><%= log.request.method %></span>
                                     <span class="pill status <%= log.response.status < 400 ? 'ok' : 'bad' %>"><%= log.response.status %></span>
+                                    <% if (isBaseline) { %>
+                                        <span class="pill baseline-chip">Baseline</span>
+                                    <% } %>
                                 </div>
                                 <div class="summary-url"><%= log.request.url %></div>
                                 <div class="summary-meta">
@@ -532,6 +593,7 @@
         const logs = Array.isArray(window.COMPARE_LOGS) ? window.COMPARE_LOGS : [];
         const compareData = window.COMPARE_DATA || {};
         const compareSections = Array.isArray(compareData.sections) ? compareData.sections : [];
+        const baselineIndex = Number.isFinite(compareData.baselineIndex) ? compareData.baselineIndex : 0;
         const collapsedSections = new Map();
         const sectionValues = new Map();
         const diffCache = new Map();
@@ -638,6 +700,7 @@
 
         function buildMarkdown() {
             const lines = [];
+            const baselineLabel = baselineIndex + 1;
             lines.push('# Log comparison');
             lines.push('');
             lines.push('## Summary');
@@ -649,7 +712,10 @@
                 const duration = `${log?.duration_ms || 0}ms`;
                 const timestamp = log?.timestamp ? new Date(log.timestamp).toLocaleString() : '';
                 const url = (log?.request?.url || '').replace(/\|/g, '\\|');
-                lines.push(`| ${index + 1} | ${method} | ${status} | ${duration} | ${timestamp} | ${url} |`);
+                const label = index === baselineIndex
+                    ? `${index + 1} (baseline)`
+                    : `${index + 1}`;
+                lines.push(`| ${label} | ${method} | ${status} | ${duration} | ${timestamp} | ${url} |`);
             });
             lines.push('');
 
@@ -657,14 +723,17 @@
                 lines.push(`## ${section.label || section.title || ''}`);
                 lines.push('');
                 const values = sectionValues.get(section.key) || [];
-                lines.push('### Log 1 (baseline)');
+                lines.push(`### Log ${baselineLabel} (baseline)`);
                 lines.push('```json');
-                lines.push(values[0] || '');
+                lines.push(values[baselineIndex] || '');
                 lines.push('```');
                 lines.push('');
 
-                for (let i = 1; i < logs.length; i += 1) {
-                    lines.push(`### Log ${i + 1} diff vs Log 1`);
+                for (let i = 0; i < logs.length; i += 1) {
+                    if (i === baselineIndex) {
+                        continue;
+                    }
+                    lines.push(`### Log ${i + 1} diff vs Log ${baselineLabel}`);
                     lines.push('```diff');
                     const diffParts = diffCache.get(section.key)?.[i] || [];
                     const diffText = diffToMarkdown(diffParts);
@@ -675,6 +744,17 @@
             });
 
             return lines.join('\n');
+        }
+
+        function setupBaselinePicker() {
+            const select = document.getElementById('baseline-select');
+            if (!select) return;
+            select.value = String(baselineIndex + 1);
+            select.addEventListener('change', () => {
+                const params = new URLSearchParams(window.location.search);
+                params.set('baseline', select.value);
+                window.location.href = `${window.location.pathname}?${params.toString()}`;
+            });
         }
 
         function setupMarkdownCopy() {
@@ -702,6 +782,7 @@
             renderDiffs();
             setupSectionToggles();
             renderTimeline();
+            setupBaselinePicker();
             setupMarkdownCopy();
         });
     </script>

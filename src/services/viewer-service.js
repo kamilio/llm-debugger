@@ -90,11 +90,15 @@ export function buildBackLink(query) {
   return search ? `/__viewer__?${search}` : '/__viewer__';
 }
 
-export function buildCompareData(logs) {
+export function buildCompareData(logs, { baselineIndex = 0 } = {}) {
   const entries = Array.isArray(logs) ? logs : [];
+  const rawBaseline = Number.isInteger(baselineIndex) ? baselineIndex : 0;
+  const clampedBaseline = entries.length
+    ? Math.min(Math.max(0, rawBaseline), entries.length - 1)
+    : 0;
   const sections = COMPARE_SECTIONS.map((section) => {
     const values = entries.map((log) => normalizeCompareValue(section.getter(log)));
-    const baseValue = values[0] || '';
+    const baseValue = values[clampedBaseline] || '';
     const diffs = values.map((value) => diffLines(baseValue, value || ''));
     const allSame = values.every((value) => value === values[0]);
     return {
@@ -105,7 +109,7 @@ export function buildCompareData(logs) {
       allSame,
     };
   });
-  return { sections };
+  return { sections, baselineIndex: clampedBaseline };
 }
 
 export function parseCompareLogSelection(value, { max = 3 } = {}) {

@@ -109,6 +109,7 @@ export function createViewerController(config) {
             error: message,
             compareData: { sections: [] },
             compareSections: COMPARE_SECTIONS,
+            baselineIndex: 0,
           });
           res.status(400).type('html').send(html);
           return;
@@ -137,13 +138,17 @@ export function createViewerController(config) {
           }
         }
 
-        const compareData = buildCompareData(logs);
+        const rawBaseline = parseInt(req.query.baseline, 10);
+        let baselineIndex = Number.isFinite(rawBaseline) ? rawBaseline - 1 : 0;
+        baselineIndex = Math.min(Math.max(0, baselineIndex), logs.length - 1);
+        const compareData = buildCompareData(logs, { baselineIndex });
         const html = await renderViewerCompare({
           logs,
           backLink,
           error: null,
           compareData,
           compareSections: COMPARE_SECTIONS,
+          baselineIndex,
         });
         res.type('html').send(html);
       } catch (error) {

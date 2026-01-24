@@ -73,6 +73,7 @@ export async function renderViewerCompare({
   error,
   compareData,
   compareSections,
+  baselineIndex,
 }) {
   const template = await getCompareTemplate();
   return ejs.render(template, {
@@ -81,5 +82,6 @@ export async function renderViewerCompare({
     error,
     compareData,
     compareSections,
+    baselineIndex,
   });
 }

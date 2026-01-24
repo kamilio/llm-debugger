@@ -164,15 +164,19 @@ describe('buildCompareData', () => {
             },
         ];
 
-        const compareData = buildCompareData(logs);
+        const compareData = buildCompareData(logs, { baselineIndex: 1 });
         const requestHeaders = compareData.sections.find((section) => section.key === 'requestHeaders');
         const requestBody = compareData.sections.find((section) => section.key === 'requestBody');
 
+        assert.strictEqual(compareData.baselineIndex, 1);
         assert.strictEqual(requestHeaders.allSame, false);
         assert.strictEqual(requestBody.allSame, true);
         assert.strictEqual(typeof requestHeaders.values[0], 'string');
         assert.ok(
-            requestHeaders.diffs[1].some((part) => part.added || part.removed)
+            requestHeaders.diffs[0].some((part) => part.added || part.removed)
+        );
+        assert.ok(
+            requestHeaders.diffs[1].every((part) => !part.added && !part.removed)
         );
     });
 });
