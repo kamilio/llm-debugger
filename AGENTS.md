@@ -24,3 +24,7 @@ Screenshot scripts run their own server
 - check if server is running `npm run status` and start server daemon`npm start` if needed
 - `npm stop` - stop background server using PID file
 - `npm restart` - stop then start
+
+## Development Scripts (verify, screenshot, ...)
+
+Scripts should start their own server on an obscure random port, so they don't clash.

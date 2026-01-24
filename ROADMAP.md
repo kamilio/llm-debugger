@@ -1,40 +1,41 @@
 # Roadmap
 
-## Agentic Testing
+## Compare
 
-### Background Process Management
+Compare up to 3 logs side-by-side.
 
-`npm start` - starts server in background, writes PID to `$LLM_DEBUGGER_HOME/.pid`, outputs startup message and exits
-`npm run stop` - reads PID file, kills process, removes PID file
-`npm run restart` - runs stop then start
+### Flow
 
-Implementation:
-- PID file location: `$LLM_DEBUGGER_HOME/.pid`
-- On start: check if PID file exists and process is running, fail if so
-- On stop: read PID, send SIGTERM, wait for exit, remove PID file
+1. Click "Compare" button on index page → enters selection mode
+2. Checkboxes appear on each log card
+3. Select 2-3 logs (max 3)
+4. "Compare Selected" button appears → navigates to compare page with selected log IDs
 
-### Test Data Folder
+### Compare Page
 
-- Folder name: `.test-data`
-- Added to `.gitignore`
-- Usage: `LLM_DEBUGGER_HOME=.test-data npm start`
+- Route: `GET /__viewer__/compare?logs=provider/file1,provider/file2,provider/file3`
+- Layout: Each log in its own column, horizontal scroll if needed
+- Sections (same as detail view): headers, request body, response body
+- Vertical alignment: all section headers start at same height across columns (use CSS grid rows or flexbox with align-items)
 
-### API Verification
+### Features
 
-Existing scripts in `scripts/`:
-- `verify-anthropic.js` - makes Anthropic API call through proxy
-- `verify-openai.js` - makes OpenAI API call through proxy
+- **Diff highlighting**: Use a diff library (e.g., diff, jsdiff) to highlight differences between logs. Color-code added/removed/changed content.
+- **Auto-collapse identical sections**: Sections that are identical across all logs are collapsed by default. Click to expand.
+- **Timeline header**: Small visualization showing when each request happened and relative durations.
+- **Export as markdown**: Copy comparison summary (with diffs) to clipboard.
 
-Required env vars (in `.env`):
-- `POE_API_KEY`
-- `PROXY_HOST`
-- `PROXY_PORT`
+### Screenshot Task
 
-Proxies to `api.poe.com`.
+- Script: `npm run screenshot_compare`
+- Takes last 3 logs by timestamp
+- Throws exception if fewer than 3 logs exist (so we can create test data)
+- Saves to screenshots directory
 
-### Playwright Screenshot Tools
+---
 
-`npm run screenshot_index` - captures screenshot of viewer index page, prints the screenshot URL
-`npm run screenshot_detail` - captures screenshot of detail view (uses newest log in `.test-data`), prints the screenshot URL
+## Backlog (DO NOT IMPLEMENT)
 
-Agent analyzes screenshots to verify UI is correct and well designed.
+### Pinned reference column
+
+Pin one log as the "baseline" (left-most, fixed position) while scrolling through others horizontally. Useful for comparing variations against a known-good request.
