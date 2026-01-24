@@ -4,7 +4,7 @@ import { mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import yaml from 'js-yaml';
-import { addAliasToConfig } from '../src/config-aliases.js';
+import { addAliasToConfig, removeAliasFromConfig } from '../src/config-aliases.js';
 
 describe('addAliasToConfig', () => {
   let testDir;
@@ -48,6 +48,31 @@ describe('addAliasToConfig', () => {
     assert.throws(
       () => addAliasToConfig('poe', 'not-a-url', configPath),
       /valid URL/
+    );
+  });
+
+  it('removes an existing alias', () => {
+    testDir = join(tmpdir(), `llm-debugger-alias-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+    const configPath = join(testDir, 'config.yaml');
+
+    addAliasToConfig('poe', 'https://api.poe.com', configPath);
+    removeAliasFromConfig('poe', configPath);
+    const content = readFileSync(configPath, 'utf-8');
+    const parsed = yaml.load(content);
+
+    assert.ok(parsed.aliases);
+    assert.strictEqual(parsed.aliases.poe, undefined);
+  });
+
+  it('rejects removing a missing alias', () => {
+    testDir = join(tmpdir(), `llm-debugger-alias-${Date.now()}`);
+    mkdirSync(testDir, { recursive: true });
+    const configPath = join(testDir, 'config.yaml');
+
+    assert.throws(
+      () => removeAliasFromConfig('missing', configPath),
+      /not found/
     );
   });
 });

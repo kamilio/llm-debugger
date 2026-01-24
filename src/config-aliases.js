@@ -69,3 +69,21 @@ export function addAliasToConfig(aliasName, url, configPath = getConfigEditPath(
   writeConfigFile(configPath, config);
   return { configPath, alias: aliasName, url: parsedUrl.toString() };
 }
+
+export function removeAliasFromConfig(aliasName, configPath = getConfigEditPath()) {
+  if (!ALIAS_NAME_PATTERN.test(aliasName || '')) {
+    throw new Error('Alias must be a safe path segment (letters, numbers, ".", "_", "-").');
+  }
+
+  const config = readConfigFile(configPath);
+  if (!Object.prototype.hasOwnProperty.call(config.aliases || {}, aliasName)) {
+    throw new Error(`Alias "${aliasName}" not found.`);
+  }
+
+  const updatedAliases = { ...config.aliases };
+  delete updatedAliases[aliasName];
+  config.aliases = updatedAliases;
+
+  writeConfigFile(configPath, config);
+  return { configPath, alias: aliasName };
+}

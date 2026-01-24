@@ -13,7 +13,7 @@ import { loadConfig } from './config.js';
 import { getEditorCandidates } from './editor.js';
 import { findAvailablePort, parsePortSpec } from './ports.js';
 import { resolveAliasConfig } from './aliases.js';
-import { addAliasToConfig } from './config-aliases.js';
+import { addAliasToConfig, removeAliasFromConfig } from './config-aliases.js';
 
 async function main() {
   const { flags, positionals } = parseArgs(process.argv.slice(2));
@@ -114,6 +114,7 @@ Usage:
   llm-debugger config show
   llm-debugger config edit
   llm-debugger config add-alias <alias> <url>
+  llm-debugger config remove-alias <alias>
 
 Options:
   --proxy-host <host>  Proxy host (default: localhost)
@@ -227,6 +228,11 @@ function runConfigCommand(subcommand, args) {
     return;
   }
 
+  if (subcommand === 'remove-alias') {
+    runConfigRemoveAlias(args);
+    return;
+  }
+
   log.error(`Unknown config command: ${subcommand}`);
   process.exitCode = 1;
 }
@@ -259,6 +265,19 @@ function runConfigAddAlias(args) {
 
   const result = addAliasToConfig(aliasName, url);
   log.success(`Added alias ${result.alias} -> ${result.url}`);
+  log.info(`Config: ${result.configPath}`);
+}
+
+function runConfigRemoveAlias(args) {
+  const [aliasName] = args;
+  if (!aliasName) {
+    log.error('Usage: llm-debugger config remove-alias <alias>');
+    process.exitCode = 1;
+    return;
+  }
+
+  const result = removeAliasFromConfig(aliasName);
+  log.success(`Removed alias ${result.alias}`);
   log.info(`Config: ${result.configPath}`);
 }
 
