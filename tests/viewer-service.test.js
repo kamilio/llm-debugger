@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import {
     resolveViewerLogPath,
     deleteViewerLog,
+    parseCompareLogSelection,
 } from '../src/services/viewer-service.js';
 
 describe('resolveViewerLogPath', () => {
@@ -96,5 +97,41 @@ describe('deleteViewerLog', () => {
 
         const files = await readdir(testDir);
         assert.ok(!files.includes('test.yaml'));
+    });
+});
+
+describe('parseCompareLogSelection', () => {
+    it('parses provider and filename pairs and removes duplicates', () => {
+        const result = parseCompareLogSelection('openai/a.yaml,openai/a.yaml,anthropic/b.yaml');
+        assert.deepStrictEqual(result, {
+            selections: [
+                { provider: 'openai', filename: 'a.yaml' },
+                { provider: 'anthropic', filename: 'b.yaml' },
+            ],
+            invalid: [],
+        });
+    });
+
+    it('captures invalid entries and non-yaml files', () => {
+        const result = parseCompareLogSelection('openai/a.txt,../bad.yaml,openai/a.yaml');
+        assert.deepStrictEqual(result, {
+            selections: [{ provider: 'openai', filename: 'a.yaml' }],
+            invalid: ['openai/a.txt', '../bad.yaml'],
+        });
+    });
+
+    it('flags extra selections beyond the max', () => {
+        const result = parseCompareLogSelection(
+            'openai/a.yaml,anthropic/b.yaml,azure/c.yaml,openai/d.yaml',
+            { max: 3 }
+        );
+        assert.deepStrictEqual(result, {
+            selections: [
+                { provider: 'openai', filename: 'a.yaml' },
+                { provider: 'anthropic', filename: 'b.yaml' },
+                { provider: 'azure', filename: 'c.yaml' },
+            ],
+            invalid: ['openai/d.yaml'],
+        });
     });
 });

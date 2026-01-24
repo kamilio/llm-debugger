@@ -2,6 +2,7 @@ import { readFile, unlink } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import yaml from 'js-yaml';
 import { getRecentLogs } from '../logger.js';
+import { parseCsvParam } from '../viewer-filters.js';
 
 const SAFE_SEGMENT = /^[a-zA-Z0-9._-]+$/;
 
@@ -63,6 +64,37 @@ export function buildBackLink(query) {
   }
   const search = params.toString();
   return search ? `/__viewer__?${search}` : '/__viewer__';
+}
+
+export function parseCompareLogSelection(value, { max = 3 } = {}) {
+  const selections = [];
+  const invalid = [];
+  const seen = new Set();
+  const entries = parseCsvParam(value);
+
+  for (const entry of entries) {
+    const [provider, filename, ...rest] = String(entry).split('/');
+    if (!provider || !filename || rest.length) {
+      invalid.push(entry);
+      continue;
+    }
+    if (!isSafeSegment(provider) || !isSafeSegment(filename) || !filename.endsWith('.yaml')) {
+      invalid.push(entry);
+      continue;
+    }
+    if (selections.length >= max) {
+      invalid.push(entry);
+      continue;
+    }
+    const key = `${provider}/${filename}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    selections.push({ provider, filename });
+    seen.add(key);
+  }
+
+  return { selections, invalid };
 }
 
 function isSafeSegment(value) {
