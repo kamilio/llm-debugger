@@ -19,9 +19,7 @@ export function applyScreenshotEnv() {
   if (!process.env.PROXY_HOST) {
     process.env.PROXY_HOST = '127.0.0.1';
   }
-  if (!process.env.PROXY_PORT) {
-    process.env.PROXY_PORT = pickRandomPortRange();
-  }
+  process.env.PROXY_PORT = pickRandomPortRange();
 }
 
 export async function startScreenshotServer() {

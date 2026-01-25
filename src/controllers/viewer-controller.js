@@ -72,10 +72,11 @@ export function createViewerController(config) {
           return;
         }
 
+        const allowHidden = req.query.reveal === '1';
         if (log?.request?.url) {
           try {
             const url = new URL(log.request.url);
-            if (shouldHideFromViewer(url.pathname)) {
+            if (!allowHidden && shouldHideFromViewer(url.pathname)) {
               res.status(404).type('text').send('Not found');
               return;
             }
@@ -168,10 +169,11 @@ export function createViewerController(config) {
           return;
         }
 
+        const allowHidden = req.query.reveal === '1';
         if (log?.request?.url) {
           try {
             const url = new URL(log.request.url);
-            if (shouldHideFromViewer(url.pathname)) {
+            if (!allowHidden && shouldHideFromViewer(url.pathname)) {
               res.status(404).json({ error: 'Not found' });
               return;
             }

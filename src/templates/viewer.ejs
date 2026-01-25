@@ -42,7 +42,7 @@
 
         .page {
             min-height: 100vh;
-            padding: 32px 18px 64px;
+            padding: 24px 18px 64px;
         }
 
         .shell {
@@ -51,31 +51,29 @@
         }
 
         .hero {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 24px;
-            align-items: center;
-            justify-content: space-between;
-            padding: 28px;
-            background: var(--panel);
-            border-radius: 24px;
+            display: grid;
+            gap: 16px;
+            padding: 20px 22px;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 20px;
             border: 1px solid var(--stroke);
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-soft);
             position: relative;
             overflow: hidden;
-            animation: rise 600ms ease-out;
+            animation: none;
         }
 
         .hero::after {
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(120deg, rgba(16, 163, 127, 0.12), transparent 60%);
+            background: linear-gradient(120deg, rgba(16, 163, 127, 0.08), transparent 70%);
             pointer-events: none;
         }
 
         .title-block {
-            max-width: 420px;
+            display: grid;
+            gap: 4px;
             position: relative;
             z-index: 1;
         }
@@ -83,35 +81,87 @@
         .eyebrow {
             text-transform: uppercase;
             letter-spacing: 0.16em;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             color: var(--muted);
-            margin-bottom: 10px;
+            margin-bottom: 2px;
         }
 
         .title {
             font-family: "Sora", "Helvetica Neue", sans-serif;
-            font-size: clamp(1.8rem, 2vw + 1.4rem, 2.6rem);
-            margin: 0 0 8px;
+            font-size: clamp(1.4rem, 1.4vw + 1.2rem, 2rem);
+            margin: 0;
         }
 
         .subtitle {
             margin: 0;
             color: var(--muted);
             line-height: 1.4;
+            font-size: 0.95rem;
+        }
+
+        .header-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--stroke);
+            background: #fff;
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .meta-pill strong {
+            color: var(--ink);
+            font-weight: 600;
         }
 
         .controls {
             display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 12px;
-            align-items: end;
-            padding: 12px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 16px;
+            align-items: start;
+            padding: 16px;
             border-radius: 18px;
             border: 1px solid var(--stroke);
-            background: var(--panel-alt);
+            background: rgba(246, 248, 250, 0.92);
             box-shadow: var(--shadow-soft);
             position: relative;
             z-index: 1;
+        }
+
+        .filters-block {
+            display: grid;
+            gap: 12px;
+        }
+
+        .filters-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .filters-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .filters-meta {
+            font-size: 0.78rem;
+            color: var(--muted);
         }
 
         .filters {
@@ -120,13 +170,60 @@
             gap: 12px;
         }
 
+        .filter-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chip {
+            border: 1px solid var(--stroke);
+            background: #fff;
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 160ms ease, box-shadow 160ms ease, color 160ms ease;
+        }
+
+        .chip strong {
+            color: var(--ink);
+            font-weight: 700;
+        }
+
+        .chip:hover {
+            color: var(--accent-strong);
+            box-shadow: 0 8px 18px rgba(16, 163, 127, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .chip-empty {
+            border-style: dashed;
+            background: transparent;
+            cursor: default;
+            color: var(--muted);
+        }
+
+        .chip-remove {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
         .control-actions {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
             justify-content: flex-end;
-            align-self: end;
+            align-self: start;
         }
 
         .field {
@@ -211,6 +308,13 @@
             box-shadow: 0 16px 32px rgba(16, 163, 127, 0.32);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .logs {
             margin-top: 28px;
             display: grid;
@@ -230,6 +334,7 @@
             display: grid;
             gap: 14px;
             padding: 20px 22px;
+            padding-right: 60px;
             border-radius: 20px;
             border: 1px solid var(--stroke);
             background: var(--panel);
@@ -237,11 +342,28 @@
             color: inherit;
             position: relative;
             overflow: hidden;
-            animation: rise 420ms ease both;
+            animation: none;
             cursor: pointer;
             outline: none;
             transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
         }
+
+        .log-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 16px;
+            bottom: 16px;
+            width: 4px;
+            border-radius: 999px;
+            background: rgba(16, 163, 127, 0.2);
+        }
+
+        .log-card.method-get::before { background: rgba(26, 127, 74, 0.5); }
+        .log-card.method-post::before { background: rgba(22, 98, 166, 0.5); }
+        .log-card.method-put::before { background: rgba(200, 120, 28, 0.5); }
+        .log-card.method-delete::before { background: rgba(179, 38, 30, 0.5); }
+        .log-card.method-patch::before { background: rgba(96, 74, 155, 0.5); }
 
         .log-card.is-selected {
             border-color: rgba(16, 163, 127, 0.5);
@@ -256,7 +378,7 @@
         .compare-check {
             position: absolute;
             top: 16px;
-            right: 16px;
+            left: 16px;
             width: 28px;
             height: 28px;
             border-radius: 10px;
@@ -295,6 +417,124 @@
             cursor: not-allowed;
         }
 
+        .overflow {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 3;
+        }
+
+        .overflow-trigger {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            border: 1px solid var(--stroke);
+            background: #fff;
+            color: var(--ink);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        }
+
+        .overflow-trigger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(16, 163, 127, 0.18);
+            border-color: rgba(16, 163, 127, 0.35);
+        }
+
+        .overflow-panel {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            min-width: 140px;
+            padding: 6px;
+            border-radius: 14px;
+            border: 1px solid var(--stroke);
+            background: #fff;
+            box-shadow: var(--shadow-soft);
+            display: none;
+        }
+
+        .overflow.is-open .overflow-panel {
+            display: grid;
+            gap: 4px;
+        }
+
+        .overflow-item {
+            display: block;
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: left;
+            padding: 8px 10px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ink);
+            cursor: pointer;
+            font-family: inherit;
+            text-decoration: none;
+        }
+
+        .overflow-item:hover {
+            background: var(--panel-alt);
+        }
+
+        .overflow-item.is-danger {
+            color: var(--danger);
+        }
+
+        .overflow.is-muted {
+            position: relative;
+            top: auto;
+            right: auto;
+        }
+
+        .overflow.is-muted .overflow-trigger {
+            width: 26px;
+            height: 26px;
+            border-color: transparent;
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            box-shadow: none;
+            opacity: 0.6;
+        }
+
+        .overflow.is-muted .overflow-trigger:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: rgba(93, 102, 112, 0.3);
+            background: rgba(255, 255, 255, 0.7);
+            opacity: 0.9;
+        }
+
+        .overflow.is-muted .overflow-panel {
+            top: 32px;
+        }
+
+        .hidden-entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 8px;
+            border-radius: 14px;
+            border: 1px dashed rgba(93, 102, 112, 0.25);
+            color: var(--muted);
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .hidden-entry .hidden-note {
+            padding: 0;
+            margin: 0;
+        }
+
         .compare-bar {
             display: none;
             align-items: center;
@@ -303,9 +543,13 @@
             padding: 16px 20px;
             border-radius: 20px;
             border: 1px solid var(--stroke);
-            background: var(--panel);
+            background: rgba(255, 255, 255, 0.95);
             box-shadow: var(--shadow-soft);
             margin-top: 18px;
+            position: sticky;
+            top: 18px;
+            z-index: 5;
+            backdrop-filter: blur(6px);
         }
 
         .compare-bar.is-active {
@@ -421,15 +665,6 @@
             background: rgba(178, 58, 58, 0.08);
         }
 
-        .cta {
-            margin-left: auto;
-            font-size: 0.72rem;
-            color: var(--muted);
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-
         .muted {
             color: var(--muted);
         }
@@ -451,9 +686,8 @@
             display: flex;
         }
 
-        @keyframes rise {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
+        body.compare-active .log-card {
+            padding-left: 64px;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -474,6 +708,11 @@
 
             .control-actions {
                 justify-content: stretch;
+                width: 100%;
+            }
+
+            .filters-header {
+                align-items: flex-start;
             }
 
             .btn {
@@ -494,9 +733,6 @@
                 max-width: 100%;
             }
 
-            .cta {
-                margin-left: 0;
-            }
         }
 
         @media (max-width: 980px) {
@@ -517,29 +753,67 @@
 <body>
     <div class="page">
         <div class="shell">
+            <% const baseUrls = (baseUrlFilters || []).filter(Boolean); %>
+            <% const methods = (methodFilters || []).filter(Boolean); %>
+            <% const activeFilters = baseUrls.length + methods.length; %>
+            <% const visibleLogs = logs.reduce((count, log) => count + (log._hidden ? 0 : 1), 0); %>
+            <% const hiddenLogs = logs.length - visibleLogs; %>
             <header class="hero">
                 <div class="title-block">
                     <div class="eyebrow">LLM Debugger</div>
+                    <h1 class="title">Requests</h1>
+                    <div class="header-meta">
+                        <span class="meta-pill"><strong><%= visibleLogs %></strong> visible</span>
+                        <% if (hiddenLogs) { %>
+                            <span class="meta-pill"><strong><%= hiddenLogs %></strong> hidden</span>
+                        <% } %>
+                        <span class="meta-pill"><strong><%= limit %></strong> limit</span>
+                        <span class="meta-pill"><strong><%= activeFilters %></strong> filters</span>
+                    </div>
                 </div>
                 <div class="controls">
-                    <div class="filters">
-                        <div class="field">
-                            <label for="limit">Show</label>
-                            <div class="field-inline">
-                                <input type="number" id="limit" value="<%= limit %>" min="1" max="100">
-                                <span class="muted">entries</span>
+                    <div class="filters-block">
+                        <div class="filters-header">
+                            <span class="filters-title">Filters</span>
+                            <span class="filters-meta">Showing <%= visibleLogs %> entries</span>
+                        </div>
+                        <div class="filters">
+                            <div class="field">
+                                <label for="limit">Show</label>
+                                <div class="field-inline">
+                                    <input type="number" id="limit" value="<%= limit %>" min="1" max="100">
+                                    <span class="muted">entries</span>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <label for="baseUrl">Base URL</label>
+                                <input type="text" id="baseUrl" placeholder="Type something e.g. api.poe.com" value="<%= baseUrls.join(',') %>">
+                            </div>
+                            <div class="field">
+                                <label for="method">Method</label>
+                                <input type="text" id="method" placeholder="Type something e.g. GET, POST" value="<%= methods.join(',') %>">
                             </div>
                         </div>
-                        <div class="field">
-                            <label for="baseUrl">Base URL</label>
-                            <input type="text" id="baseUrl" placeholder="Type something e.g. api.poe.com" value="<%= (baseUrlFilters || []).join(',') %>">
-                        </div>
-                        <div class="field">
-                            <label for="method">Method</label>
-                            <input type="text" id="method" placeholder="Type something e.g. GET, POST" value="<%= (methodFilters || []).join(',') %>">
+                        <div class="filter-chips" aria-live="polite">
+                            <% if (!activeFilters) { %>
+                                <span class="chip chip-empty">No filters applied</span>
+                            <% } %>
+                            <% baseUrls.forEach((value) => { %>
+                                <button class="chip" type="button" data-filter="baseUrl" data-value="<%= value %>" aria-label="Remove base URL filter <%= value %>">
+                                    Base URL: <strong><%= value %></strong>
+                                    <span class="chip-remove">remove</span>
+                                </button>
+                            <% }) %>
+                            <% methods.forEach((value) => { %>
+                                <button class="chip" type="button" data-filter="method" data-value="<%= value %>" aria-label="Remove method filter <%= value %>">
+                                    Method: <strong><%= value %></strong>
+                                    <span class="chip-remove">remove</span>
+                                </button>
+                            <% }) %>
                         </div>
                     </div>
                     <div class="control-actions">
+                        <button class="btn secondary" id="clear-filters" type="button" <%= activeFilters ? '' : 'disabled' %>>Clear filters</button>
                         <button class="btn secondary" id="compare-toggle" type="button">Compare</button>
                         <button class="btn" onclick="refresh()" type="button">Refresh</button>
                     </div>
@@ -549,7 +823,7 @@
             <div class="compare-bar" id="compare-bar" aria-live="polite">
                 <div>
                     <div class="compare-title">Compare mode</div>
-                    <div class="compare-subtitle">Select 2-3 logs to compare.</div>
+                    <div class="compare-subtitle" id="compare-subtitle">Select 2-3 logs to compare.</div>
                 </div>
                 <button class="btn" id="compare-submit" type="button" disabled>Compare Selected</button>
             </div>
@@ -563,6 +837,9 @@
                     <% if ((baseUrlFilters || []).length) { backParams.set('baseUrl', baseUrlFilters.join(',')); } %>
                     <% if ((methodFilters || []).length) { backParams.set('method', methodFilters.join(',')); } %>
                     <% const backQuery = backParams.toString() ? `?${backParams.toString()}` : ''; %>
+                    <% const hiddenBackParams = new URLSearchParams(backParams.toString()); %>
+                    <% hiddenBackParams.set('reveal', '1'); %>
+                    <% const hiddenBackQuery = hiddenBackParams.toString() ? `?${hiddenBackParams.toString()}` : ''; %>
                     <% function buildBaseUrlLink(baseUrl) { %>
                         <% const params = new URLSearchParams(backParams.toString()); %>
                         <% const values = (baseUrlFilters || []).slice(); %>
@@ -571,25 +848,45 @@
                         <% return params.toString() ? `?${params.toString()}` : ''; %>
                     <% } %>
                     <% logs.forEach(function(log, index) { %>
+                        <% const providerName = log.provider || 'unknown'; %>
                         <% if (log._hidden) { %>
-                            <div class="hidden-note">Hidden: <%= log._path %></div>
+                            <div class="hidden-entry"
+                                data-provider="<%= log._viewer_provider || providerName %>"
+                                data-filename="<%= log._viewer_file || '' %>"
+                                data-hidden="true">
+                                <div class="hidden-note">Hidden: <%= log._path %></div>
+                                <div class="overflow is-muted">
+                                    <button class="overflow-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Open hidden log actions">...</button>
+                                    <div class="overflow-panel" role="menu">
+                                        <a class="overflow-item" role="menuitem" href="/__viewer__/<%= encodeURIComponent(log._viewer_provider || providerName) %>/<%= encodeURIComponent(log._viewer_file || '') %><%= hiddenBackQuery %>">Open</a>
+                                        <button class="overflow-item is-danger" type="button" role="menuitem">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
                         <% } else { %>
-                            <% const providerName = log.provider || 'unknown'; %>
+                            <% const methodLabel = log.request.method || 'UNKNOWN'; %>
+                            <% const methodClass = methodLabel.toLowerCase(); %>
                             <% const appName = log.request.headers['x-title'] || log.request.headers['http-referer'] || log.request.headers['X-Title'] || log.request.headers['HTTP-Referer'] || log.request.headers['referer'] || log.request.headers['Referer']; %>
-                            <article class="log-card"
+                            <article class="log-card method-<%= methodClass %>"
                                 style="animation-delay: <%= index * 45 %>ms"
                                 data-href="/__viewer__/<%= encodeURIComponent(log._viewer_provider || providerName) %>/<%= encodeURIComponent(log._viewer_file || '') %><%= backQuery %>"
                                 data-provider="<%= log._viewer_provider || providerName %>"
                                 data-filename="<%= log._viewer_file || '' %>"
                                 role="link"
                                 tabindex="0"
-                                aria-label="Open <%= log.request.method %> <%= log.request.url %>">
+                                aria-label="Open <%= methodLabel %> <%= log.request.url %>">
                                 <label class="compare-check">
                                     <input class="compare-input" type="checkbox" aria-label="Select log for compare">
                                     <span class="compare-indicator"></span>
                                 </label>
+                                <div class="overflow">
+                                    <button class="overflow-trigger" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Open log actions">...</button>
+                                    <div class="overflow-panel" role="menu">
+                                        <button class="overflow-item is-danger" type="button" role="menuitem">Delete</button>
+                                    </div>
+                                </div>
                                 <div class="log-top">
-                                    <span class="method <%= log.request.method.toLowerCase() %>"><%= log.request.method %></span>
+                                    <span class="method <%= methodClass %>"><%= methodLabel %></span>
                                     <span class="url"><%= log.request.url %></span>
                                     <% if (log.response.is_streaming) { %>
                                         <span class="pill">Streaming</span>
@@ -606,7 +903,6 @@
                                     <% if (appName) { %>
                                         <span class="pill"><%= appName %></span>
                                     <% } %>
-                                    <span class="cta">Open</span>
                                 </div>
                             </article>
                         <% } %>
@@ -617,12 +913,24 @@
     </div>
 
     <script>
+        function normalizeList(value) {
+            return value
+                .split(',')
+                .map((item) => item.trim())
+                .filter(Boolean);
+        }
+
         function refresh() {
-            const limit = document.getElementById('limit').value;
-            const baseUrl = document.getElementById('baseUrl').value;
-            const method = document.getElementById('method').value;
+            const limitInput = document.getElementById('limit');
+            const baseUrlInput = document.getElementById('baseUrl');
+            const methodInput = document.getElementById('method');
+            const limit = limitInput ? limitInput.value : '';
+            const baseUrl = normalizeList(baseUrlInput ? baseUrlInput.value : '').join(',');
+            const method = normalizeList(methodInput ? methodInput.value : '').join(',');
             const params = new URLSearchParams();
-            params.set('limit', limit);
+            if (limit) {
+                params.set('limit', limit);
+            }
             if (baseUrl) {
                 params.set('baseUrl', baseUrl);
             }
@@ -632,6 +940,24 @@
             window.location.href = '/__viewer__?' + params.toString();
         }
 
+        function clearFilters() {
+            const baseUrlInput = document.getElementById('baseUrl');
+            const methodInput = document.getElementById('method');
+            if (baseUrlInput) baseUrlInput.value = '';
+            if (methodInput) methodInput.value = '';
+            refresh();
+        }
+
+        function removeFilterValue(inputId, valueToRemove) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            const nextValues = normalizeList(input.value).filter(
+                (item) => item.toLowerCase() !== valueToRemove.toLowerCase()
+            );
+            input.value = nextValues.join(',');
+            refresh();
+        }
+
         document.addEventListener('keydown', (e) => {
             if (e.key === 'r' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
@@ -639,9 +965,42 @@
             }
         });
 
+        ['limit', 'baseUrl', 'method'].forEach((id) => {
+            const input = document.getElementById(id);
+            if (!input) return;
+            input.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    refresh();
+                }
+            });
+        });
+
+        const clearFiltersButton = document.getElementById('clear-filters');
+        if (clearFiltersButton) {
+            clearFiltersButton.addEventListener('click', () => {
+                clearFilters();
+            });
+        }
+
+        document.querySelectorAll('.chip[data-filter]').forEach((chip) => {
+            chip.addEventListener('click', () => {
+                const filterType = chip.dataset.filter;
+                const filterValue = chip.dataset.value || '';
+                if (!filterType) return;
+                if (!filterValue) return;
+                if (filterType === 'baseUrl') {
+                    removeFilterValue('baseUrl', filterValue);
+                } else if (filterType === 'method') {
+                    removeFilterValue('method', filterValue);
+                }
+            });
+        });
+
         const compareToggle = document.getElementById('compare-toggle');
         const compareBar = document.getElementById('compare-bar');
         const compareSubmit = document.getElementById('compare-submit');
+        const compareSubtitle = document.getElementById('compare-subtitle');
         const compareInputs = Array.from(document.querySelectorAll('.compare-input'));
         const compareCards = Array.from(document.querySelectorAll('.log-card[data-provider][data-filename]'));
         const selectionLimit = 3;
@@ -664,6 +1023,17 @@
             compareSubmit.textContent = selectedCount >= 2
                 ? `Compare Selected (${selectedCount})`
                 : 'Compare Selected';
+
+            if (compareSubtitle) {
+                if (!compareActive) {
+                    compareSubtitle.textContent = 'Select 2-3 logs to compare.';
+                } else if (selectedCount < 2) {
+                    const remaining = 2 - selectedCount;
+                    compareSubtitle.textContent = `Selected ${selectedCount}/${selectionLimit}. Select ${remaining} more.`;
+                } else {
+                    compareSubtitle.textContent = `Selected ${selectedCount}/${selectionLimit}. Ready to compare.`;
+                }
+            }
 
             compareCards.forEach((card) => {
                 const input = card.querySelector('.compare-input');
@@ -713,9 +1083,9 @@
             const params = new URLSearchParams();
             params.set('logs', selections.join(','));
 
-            const limit = document.getElementById('limit').value;
-            const baseUrl = document.getElementById('baseUrl').value;
-            const method = document.getElementById('method').value;
+            const limit = document.getElementById('limit')?.value || '';
+            const baseUrl = normalizeList(document.getElementById('baseUrl')?.value || '').join(',');
+            const method = normalizeList(document.getElementById('method')?.value || '').join(',');
 
             if (limit) {
                 params.set('limit', limit);
@@ -753,10 +1123,87 @@
             updateCompareState();
         }
 
+        const overflowMenus = Array.from(document.querySelectorAll('.overflow'));
+
+        function closeOverflowMenus(except) {
+            overflowMenus.forEach((menu) => {
+                if (menu === except) return;
+                menu.classList.remove('is-open');
+                const trigger = menu.querySelector('.overflow-trigger');
+                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        async function deleteLogEntry(entry, button) {
+            if (!entry) return;
+            const provider = entry.dataset.provider || 'unknown';
+            const filename = entry.dataset.filename || '';
+            if (!filename) return;
+            if (!confirm('Delete this log entry? This cannot be undone.')) {
+                return;
+            }
+
+            const isHidden = entry.dataset.hidden === 'true';
+            const deleteUrl = `/__viewer__/${encodeURIComponent(provider)}/${encodeURIComponent(filename)}${isHidden ? '?reveal=1' : ''}`;
+            const originalText = button.textContent;
+            button.textContent = 'Deleting...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(deleteUrl, { method: 'DELETE' });
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    alert('Failed to delete: ' + (data.error || 'Unknown error'));
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    return;
+                }
+                window.location.reload();
+            } catch (error) {
+                alert('Failed to delete: ' + error.message);
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        overflowMenus.forEach((menu) => {
+            const trigger = menu.querySelector('.overflow-trigger');
+            const deleteButton = menu.querySelector('.overflow-item.is-danger');
+            const entry = menu.closest('[data-provider][data-filename]');
+
+            if (trigger) {
+                trigger.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const nextState = !menu.classList.contains('is-open');
+                    closeOverflowMenus(menu);
+                    menu.classList.toggle('is-open', nextState);
+                    trigger.setAttribute('aria-expanded', nextState ? 'true' : 'false');
+                });
+            }
+
+            if (deleteButton) {
+                deleteButton.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    deleteLogEntry(entry, deleteButton);
+                });
+            }
+        });
+
+        document.addEventListener('click', (event) => {
+            if (event.target.closest('.overflow')) return;
+            closeOverflowMenus();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeOverflowMenus();
+            }
+        });
+
         document.querySelectorAll('.log-card[data-href]').forEach((card) => {
             const href = card.dataset.href;
             if (!href) return;
-            const isInteractiveTarget = (event) => event.target.closest('a, .compare-check');
+            const isInteractiveTarget = (event) => event.target.closest('a, .compare-check, .overflow');
             card.addEventListener('click', (event) => {
                 if (isInteractiveTarget(event)) return;
                 if (compareActive) {

@@ -79,7 +79,7 @@
             box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
-            animation: rise 600ms ease-out;
+            animation: none;
         }
 
         .header::after {
@@ -96,6 +96,8 @@
             margin: 0 0 8px;
             position: relative;
             z-index: 1;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .subtitle {
@@ -107,7 +109,7 @@
 
         .summary {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            grid-template-columns: 1fr;
             gap: 12px;
             margin-top: 12px;
             position: relative;
@@ -246,14 +248,18 @@
             padding: 8px;
             border-radius: 16px;
             border: 1px solid var(--stroke);
-            background: var(--panel);
+            background: rgba(255, 255, 255, 0.92);
             box-shadow: var(--shadow-soft);
+            position: sticky;
+            top: 16px;
+            z-index: 4;
+            backdrop-filter: blur(6px);
         }
 
         .tab-button {
             border: 1px solid transparent;
             border-radius: 14px;
-            padding: 8px 14px;
+            padding: 8px 16px 10px;
             font-size: 0.85rem;
             font-weight: 600;
             background: transparent;
@@ -261,6 +267,19 @@
             cursor: pointer;
             transition: transform 160ms ease, box-shadow 160ms ease, color 160ms ease;
             min-height: 36px;
+            position: relative;
+        }
+
+        .tab-button::after {
+            content: "";
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 6px;
+            height: 2px;
+            border-radius: 999px;
+            background: transparent;
+            transition: background 160ms ease;
         }
 
         .tab-button:hover {
@@ -276,9 +295,13 @@
             box-shadow: var(--shadow-soft);
         }
 
+        .tab-button.is-active::after {
+            background: var(--accent);
+        }
+
         .tab-panel {
             display: none;
-            animation: rise 360ms ease-out;
+            animation: none;
         }
 
         .tab-panel.is-active {
@@ -300,11 +323,26 @@
             justify-content: space-between;
             gap: 12px;
             min-height: 36px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--stroke);
+            position: relative;
+        }
+
+        .panel-header::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -1px;
+            width: 42px;
+            height: 2px;
+            border-radius: 999px;
+            background: var(--accent);
         }
 
         .panel h3 {
             margin: 0;
-            font-size: 0.95rem;
+            font-size: 0.98rem;
+            font-weight: 700;
         }
 
         .preview-grid {
@@ -315,32 +353,49 @@
 
         .message-list {
             display: grid;
-            gap: 14px;
+            gap: 16px;
         }
 
         .message-card {
             border-radius: 18px;
             border: 1px solid var(--stroke);
-            background: #fff;
-            padding: 14px 16px;
+            background: linear-gradient(135deg, var(--role-wash, rgba(15, 23, 42, 0.02)), #fff 60%);
+            padding: 18px;
             display: grid;
-            gap: 10px;
+            gap: 12px;
+            position: relative;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
+        }
+
+        .message-card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 14px;
+            bottom: 14px;
+            width: 4px;
+            border-radius: 999px;
+            background: var(--role-accent, var(--stroke));
         }
 
         .message-card.role-system {
-            border-left: 4px solid rgba(179, 38, 30, 0.45);
+            --role-accent: rgba(179, 38, 30, 0.6);
+            --role-wash: rgba(179, 38, 30, 0.08);
         }
 
         .message-card.role-user {
-            border-left: 4px solid rgba(22, 98, 166, 0.45);
+            --role-accent: rgba(22, 98, 166, 0.6);
+            --role-wash: rgba(22, 98, 166, 0.08);
         }
 
         .message-card.role-assistant {
-            border-left: 4px solid rgba(26, 127, 74, 0.45);
+            --role-accent: rgba(26, 127, 74, 0.6);
+            --role-wash: rgba(26, 127, 74, 0.08);
         }
 
         .message-card.role-tool {
-            border-left: 4px solid rgba(96, 74, 155, 0.45);
+            --role-accent: rgba(96, 74, 155, 0.6);
+            --role-wash: rgba(96, 74, 155, 0.08);
         }
 
         .message-meta {
@@ -348,20 +403,24 @@
             flex-wrap: wrap;
             gap: 8px;
             align-items: center;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.12em;
             color: var(--muted);
             font-variant-numeric: tabular-nums;
         }
 
         .message-role {
             font-weight: 700;
-            color: var(--accent-strong);
+            color: var(--role-accent, var(--accent-strong));
+            background: var(--role-wash, rgba(16, 163, 127, 0.12));
+            padding: 4px 8px;
+            border-radius: 999px;
         }
 
         .message-name {
             font-weight: 600;
+            color: var(--muted);
         }
 
         .message-tags {
@@ -380,10 +439,17 @@
             font-weight: 600;
         }
 
+        .message-parts {
+            display: grid;
+            gap: 10px;
+        }
+
         .message-text {
             margin: 0;
             white-space: pre-wrap;
             line-height: 1.6;
+            font-size: 0.95rem;
+            color: var(--ink);
         }
 
         .message-image {
@@ -400,6 +466,7 @@
             background: rgba(15, 23, 42, 0.04);
             border-radius: 12px;
             padding: 10px 12px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
         }
 
         .message-tool pre,
@@ -409,8 +476,8 @@
             background: transparent;
             color: var(--ink);
             padding: 0;
-            font-size: 0.78rem;
-            line-height: 1.5;
+            font-size: 0.8rem;
+            line-height: 1.55;
             white-space: pre-wrap;
         }
 
@@ -422,6 +489,14 @@
 
         .message-refusal {
             color: var(--danger);
+            font-weight: 600;
+        }
+
+        .tool-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
             font-weight: 600;
         }
 
@@ -492,6 +567,7 @@
         .spec-grid {
             display: grid;
             gap: 16px;
+            grid-template-columns: 1fr;
         }
 
         .spec-title {
@@ -583,12 +659,13 @@
             margin: 0;
             background: var(--code-bg);
             color: var(--code-ink);
-            padding: 16px;
+            padding: 18px;
             border-radius: 16px;
             border: 1px solid var(--code-border);
             overflow-x: auto;
-            font-size: 0.82rem;
-            line-height: 1.6;
+            font-size: 0.84rem;
+            line-height: 1.65;
+            tab-size: 2;
         }
 
         pre code.hljs {
@@ -647,11 +724,6 @@
             font-size: 0.85rem;
         }
 
-        @keyframes rise {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         @media (max-width: 720px) {
             .header {
                 padding: 20px;
@@ -673,7 +745,7 @@
 <body>
     <% const providerName = log.provider || 'unknown'; %>
     <% const appName = log.request.headers['x-title'] || log.request.headers['http-referer'] || log.request.headers['X-Title'] || log.request.headers['HTTP-Referer'] || log.request.headers['referer'] || log.request.headers['Referer']; %>
-    <% const detailAltText = `Request detail\\n${providerName}${appName ? ` - ${appName}` : ''}\\n\\n${log.request.url}`; %>
+    <% const detailAltText = `Request log\\n${providerName}${appName ? ` - ${appName}` : ''}\\n\\n${log.request.url}`; %>
     <% const previewData = preview || {}; %>
     <% const previewRequest = previewData.request || { messages: [] }; %>
     <% const previewResponse = previewData.response || { messages: [] }; %>
@@ -697,9 +769,8 @@
                         <span class="pill <%= log.request.method.toLowerCase() %>"><%= log.request.method %></span>
                         <span class="pill shape"><%= previewData.shapeLabel || 'Other' %></span>
                     </div>
-                    <h1 class="title">Request detail</h1>
+                    <h1 class="title"><%= log.request.url %></h1>
                     <p class="subtitle"><%= providerName %> <%= appName ? `- ${appName}` : '' %></p>
-                    <div class="url"><%= log.request.url %></div>
                 </div>
                 <div class="summary">
                     <div class="metric">
