@@ -37,20 +37,20 @@ Configure aliases to proxy to multiple APIs without restarting. When aliases are
 
 ```bash
 # Add aliases for common LLM providers
-llm-debugger config add-alias openai https://api.openai.com
-llm-debugger config add-alias anthropic https://api.anthropic.com
-llm-debugger config add-alias openrouter https://openrouter.ai/api
-llm-debugger config add-alias poe https://api.poe.com
+npx llm-debugger@latest config add-alias openai https://api.openai.com
+npx llm-debugger@latest config add-alias anthropic https://api.anthropic.com
+npx llm-debugger@latest config add-alias openrouter https://openrouter.ai/api
+npx llm-debugger@latest config add-alias poe https://api.poe.com
 
 # Start without --target (aliases only)
-llm-debugger
+npx llm-debugger@latest
 
 # Start with an alias as the default target
-llm-debugger --target openai
+npx llm-debugger@latest --target openai
 
 # Persist a default alias for root requests
-llm-debugger config set-default-alias openai
-llm-debugger
+npx llm-debugger@latest config set-default-alias openai
+npx llm-debugger@latest
 ```
 
 Then use the alias path:
@@ -78,11 +78,11 @@ Config lives at `~/.llm-debugger/config.yaml` and logs at `~/.llm-debugger/logs`
 ### Config Commands
 
 ```bash
-llm-debugger config show              # Display current config
-llm-debugger config edit              # Open config in editor
-llm-debugger config add-alias <name> <url>    # Add an alias
-llm-debugger config remove-alias <name>       # Remove an alias
-llm-debugger config set-default-alias <name>  # Set default alias for root requests
+npx llm-debugger@latest config show              # Display current config
+npx llm-debugger@latest config edit              # Open config in editor
+npx llm-debugger@latest config add-alias <name> <url>    # Add an alias
+npx llm-debugger@latest config remove-alias <name>       # Remove an alias
+npx llm-debugger@latest config set-default-alias <name>  # Set default alias for root requests
 ```
 
 ## License
