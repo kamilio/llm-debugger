@@ -744,6 +744,9 @@
 </head>
 <body>
     <% const providerName = log.provider || 'unknown'; %>
+    <% const aliasName = log._alias || null; %>
+    <% const normalizedProvider = String(providerName).toLowerCase(); %>
+    <% const normalizedAlias = aliasName ? String(aliasName).toLowerCase() : ''; %>
     <% const appName = log.request.headers['x-title'] || log.request.headers['http-referer'] || log.request.headers['X-Title'] || log.request.headers['HTTP-Referer'] || log.request.headers['referer'] || log.request.headers['Referer']; %>
     <% const detailAltText = `Request log\\n${providerName}${appName ? ` - ${appName}` : ''}\\n\\n${log.request.url}`; %>
     <% const previewData = preview || {}; %>
@@ -770,7 +773,7 @@
                         <span class="pill shape"><%= previewData.shapeLabel || 'Other' %></span>
                     </div>
                     <h1 class="title"><%= log.request.url %></h1>
-                    <p class="subtitle"><%= providerName %> <%= appName ? `- ${appName}` : '' %></p>
+                    <p class="subtitle"><%= providerName %><% if (aliasName && normalizedAlias !== normalizedProvider) { %> · Alias: <%= aliasName %><% } %> <%= appName ? `- ${appName}` : '' %></p>
                 </div>
                 <div class="summary">
                     <div class="metric">

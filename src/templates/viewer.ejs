@@ -781,14 +781,13 @@
     <div class="page">
         <div class="shell">
             <% const baseUrls = (baseUrlFilters || []).filter(Boolean); %>
+            <% const aliasFiltersList = (aliasFilters || []).filter(Boolean); %>
             <% const methods = (methodFilters || []).filter(Boolean); %>
-            <% const activeFilters = baseUrls.length + methods.length; %>
+            <% const activeFilters = baseUrls.length + aliasFiltersList.length + methods.length; %>
             <% const visibleLogs = logs.reduce((count, log) => count + (log._hidden ? 0 : 1), 0); %>
             <% const hiddenLogs = logs.length - visibleLogs; %>
             <% const filterSummary = activeFilters ? `${activeFilters} active` : 'none'; %>
             <% const filterSummaryMeta = `${filterSummary} / ${visibleLogs} shown`; %>
-            <% const aliasLookup = aliasByHost || {}; %>
-            <% const hasAliases = Object.keys(aliasLookup).length > 0; %>
             <header class="hero">
                 <div class="title-block">
                     <div class="eyebrow">LLM Debugger</div>
@@ -811,7 +810,11 @@
                                 </div>
                                 <div class="field">
                                     <label for="baseUrl">Base URL</label>
-                                    <input type="text" id="baseUrl" placeholder="Type something e.g. api.poe.com" value="<%= baseUrls.join(',') %>">
+                                    <input type="text" id="baseUrl" placeholder="Type host e.g. api.poe.com" value="<%= baseUrls.join(',') %>">
+                                </div>
+                                <div class="field">
+                                    <label for="alias">Alias</label>
+                                    <input type="text" id="alias" placeholder="Type alias e.g. openai" value="<%= aliasFiltersList.join(',') %>">
                                 </div>
                                 <div class="field">
                                     <label for="method">Method</label>
@@ -825,6 +828,12 @@
                                 <% baseUrls.forEach((value) => { %>
                                     <button class="chip" type="button" data-filter="baseUrl" data-value="<%= value %>" aria-label="Remove base URL filter <%= value %>">
                                         Base URL: <strong><%= value %></strong>
+                                        <span class="chip-remove">remove</span>
+                                    </button>
+                                <% }) %>
+                                <% aliasFiltersList.forEach((value) => { %>
+                                    <button class="chip" type="button" data-filter="alias" data-value="<%= value %>" aria-label="Remove alias filter <%= value %>">
+                                        Alias: <strong><%= value %></strong>
                                         <span class="chip-remove">remove</span>
                                     </button>
                                 <% }) %>
@@ -862,6 +871,7 @@
                     <% const backParams = new URLSearchParams(); %>
                     <% backParams.set('limit', limit); %>
                     <% if ((baseUrlFilters || []).length) { backParams.set('baseUrl', baseUrlFilters.join(',')); } %>
+                    <% if (aliasFiltersList.length) { backParams.set('alias', aliasFiltersList.join(',')); } %>
                     <% if ((methodFilters || []).length) { backParams.set('method', methodFilters.join(',')); } %>
                     <% const backQuery = backParams.toString() ? `?${backParams.toString()}` : ''; %>
                     <% const hiddenBackParams = new URLSearchParams(backParams.toString()); %>
@@ -872,6 +882,13 @@
                         <% const values = (baseUrlFilters || []).slice(); %>
                         <% if (baseUrl && !values.includes(baseUrl)) { values.push(baseUrl); } %>
                         <% if (values.length) { params.set('baseUrl', values.join(',')); } %>
+                        <% return params.toString() ? `?${params.toString()}` : ''; %>
+                    <% } %>
+                    <% function buildAliasLink(alias) { %>
+                        <% const params = new URLSearchParams(backParams.toString()); %>
+                        <% const values = aliasFiltersList.slice(); %>
+                        <% if (alias && !values.includes(alias)) { values.push(alias); } %>
+                        <% if (values.length) { params.set('alias', values.join(',')); } %>
                         <% return params.toString() ? `?${params.toString()}` : ''; %>
                     <% } %>
                     <% logs.forEach(function(log, index) { %>
@@ -895,12 +912,13 @@
                             <% const methodClass = methodLabel.toLowerCase(); %>
                             <% const appName = log.request.headers['x-title'] || log.request.headers['http-referer'] || log.request.headers['X-Title'] || log.request.headers['HTTP-Referer'] || log.request.headers['referer'] || log.request.headers['Referer']; %>
                             <% const baseUrlLabel = log._base_url; %>
-                            <% const aliasLabel = hasAliases && baseUrlLabel ? aliasLookup[baseUrlLabel] : null; %>
-                            <% const baseUrlDisplay = aliasLabel || baseUrlLabel; %>
-                            <% const baseUrlFilterValue = aliasLabel || baseUrlLabel; %>
+                            <% const aliasLabel = log._alias; %>
+                            <% const baseUrlDisplay = baseUrlLabel; %>
+                            <% const baseUrlFilterValue = baseUrlLabel; %>
                             <% const providerLabel = providerName; %>
                             <% const appLabel = appName; %>
                             <% const normalizedBaseUrlDisplay = (baseUrlDisplay || '').toLowerCase(); %>
+                            <% const normalizedAlias = (aliasLabel || '').toLowerCase(); %>
                             <% const normalizedProvider = (providerLabel || '').toLowerCase(); %>
                             <% const normalizedApp = (appLabel || '').toLowerCase(); %>
                             <article class="log-card method-<%= methodClass %>"
@@ -935,10 +953,13 @@
                                     <% if (baseUrlDisplay) { %>
                                         <a class="pill pill-link" href="<%= buildBaseUrlLink(baseUrlFilterValue) %>"><%= baseUrlDisplay %></a>
                                     <% } %>
-                                    <% if (providerLabel && (!baseUrlDisplay || normalizedProvider !== normalizedBaseUrlDisplay)) { %>
+                                    <% if (aliasLabel && (!baseUrlDisplay || normalizedAlias !== normalizedBaseUrlDisplay)) { %>
+                                        <a class="pill pill-link" href="<%= buildAliasLink(aliasLabel) %>">Alias: <%= aliasLabel %></a>
+                                    <% } %>
+                                    <% if (providerLabel && (!baseUrlDisplay || normalizedProvider !== normalizedBaseUrlDisplay) && (!aliasLabel || normalizedProvider !== normalizedAlias)) { %>
                                         <span class="pill"><%= providerLabel %></span>
                                     <% } %>
-                                    <% if (appLabel && (!baseUrlDisplay || normalizedApp !== normalizedBaseUrlDisplay) && (!providerLabel || normalizedApp !== normalizedProvider)) { %>
+                                    <% if (appLabel && (!baseUrlDisplay || normalizedApp !== normalizedBaseUrlDisplay) && (!providerLabel || normalizedApp !== normalizedProvider) && (!aliasLabel || normalizedApp !== normalizedAlias)) { %>
                                         <span class="pill"><%= appLabel %></span>
                                     <% } %>
                                 </div>
@@ -961,9 +982,11 @@
         function refresh() {
             const limitInput = document.getElementById('limit');
             const baseUrlInput = document.getElementById('baseUrl');
+            const aliasInput = document.getElementById('alias');
             const methodInput = document.getElementById('method');
             const limit = limitInput ? limitInput.value : '';
             const baseUrl = normalizeList(baseUrlInput ? baseUrlInput.value : '').join(',');
+            const alias = normalizeList(aliasInput ? aliasInput.value : '').join(',');
             const method = normalizeList(methodInput ? methodInput.value : '').join(',');
             const params = new URLSearchParams();
             if (limit) {
@@ -971,6 +994,9 @@
             }
             if (baseUrl) {
                 params.set('baseUrl', baseUrl);
+            }
+            if (alias) {
+                params.set('alias', alias);
             }
             if (method) {
                 params.set('method', method);
@@ -980,8 +1006,10 @@
 
         function clearFilters() {
             const baseUrlInput = document.getElementById('baseUrl');
+            const aliasInput = document.getElementById('alias');
             const methodInput = document.getElementById('method');
             if (baseUrlInput) baseUrlInput.value = '';
+            if (aliasInput) aliasInput.value = '';
             if (methodInput) methodInput.value = '';
             refresh();
         }
@@ -1003,7 +1031,7 @@
             }
         });
 
-        ['limit', 'baseUrl', 'method'].forEach((id) => {
+        ['limit', 'baseUrl', 'alias', 'method'].forEach((id) => {
             const input = document.getElementById(id);
             if (!input) return;
             input.addEventListener('keydown', (event) => {
@@ -1029,6 +1057,8 @@
                 if (!filterValue) return;
                 if (filterType === 'baseUrl') {
                     removeFilterValue('baseUrl', filterValue);
+                } else if (filterType === 'alias') {
+                    removeFilterValue('alias', filterValue);
                 } else if (filterType === 'method') {
                     removeFilterValue('method', filterValue);
                 }
@@ -1123,6 +1153,7 @@
 
             const limit = document.getElementById('limit')?.value || '';
             const baseUrl = normalizeList(document.getElementById('baseUrl')?.value || '').join(',');
+            const alias = normalizeList(document.getElementById('alias')?.value || '').join(',');
             const method = normalizeList(document.getElementById('method')?.value || '').join(',');
 
             if (limit) {
@@ -1130,6 +1161,9 @@
             }
             if (baseUrl) {
                 params.set('baseUrl', baseUrl);
+            }
+            if (alias) {
+                params.set('alias', alias);
             }
             if (method) {
                 params.set('method', method);

@@ -47,6 +47,7 @@ export async function renderViewer({
   logs,
   limit,
   baseUrlFilters,
+  aliasFilters,
   methodFilters,
   aliasByHost,
 }) {
@@ -55,6 +56,7 @@ export async function renderViewer({
     logs,
     limit,
     baseUrlFilters,
+    aliasFilters,
     methodFilters,
     aliasByHost,
   });

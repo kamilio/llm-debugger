@@ -30,12 +30,16 @@ export const COMPARE_SECTIONS = [
   },
 ];
 
-export async function getViewerIndexData(outputDir, { limit, provider, baseUrls, methods, aliasHostMap }) {
+export async function getViewerIndexData(
+  outputDir,
+  { limit, provider, baseUrls, methods, aliases, aliasHostMap }
+) {
   const logs = await getRecentLogs(outputDir, {
     limit,
     provider,
     baseUrls,
     methods,
+    aliases,
     aliasHostMap,
   });
   const providerMeta = collectProviders(logs);
@@ -83,6 +87,9 @@ export function buildBackLink(query) {
   }
   if (query?.baseUrl) {
     params.set('baseUrl', String(query.baseUrl));
+  }
+  if (query?.alias) {
+    params.set('alias', String(query.alias));
   }
   if (query?.method) {
     params.set('method', String(query.method));

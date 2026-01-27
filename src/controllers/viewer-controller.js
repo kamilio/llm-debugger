@@ -13,6 +13,7 @@ import { buildPreviewModel } from '../services/viewer-preview.js';
 import {
   normalizeBaseUrlFilters,
   normalizeBaseUrlValue,
+  normalizeAliasFilters,
   normalizeMethodFilters,
   parseCsvParam,
 } from '../viewer-filters.js';
@@ -22,19 +23,27 @@ export function createViewerController(config) {
     index: async (req, res) => {
       const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
       const baseUrlFilters = normalizeBaseUrlFilters(parseCsvParam(req.query.baseUrl));
+      const aliasFilters = normalizeAliasFilters(parseCsvParam(req.query.alias));
       const methodFilters = normalizeMethodFilters(parseCsvParam(req.query.method));
-      const { aliasByHost, aliasHostMap } = buildAliasMaps(config.aliases);
+      const { aliasByHost, aliasHostMap, aliasNameMap } = buildAliasMaps(config.aliases);
       const { logs } = await getViewerIndexData(
         config.outputDir,
         {
           limit,
           baseUrls: baseUrlFilters,
+          aliases: aliasFilters,
           methods: methodFilters,
           aliasHostMap,
         }
       );
 
       const processedLogs = logs.map((log) => {
+        const baseUrl = normalizeBaseUrlValue(log?.request?.url);
+        const providerKey = log?.provider ? String(log.provider).toLowerCase() : '';
+        const aliasLabel =
+          (providerKey && aliasNameMap[providerKey]) ||
+          (baseUrl ? aliasByHost[baseUrl] : null) ||
+          null;
         try {
           const url = new URL(log.request.url);
           const hidden = shouldHideFromViewer(url.pathname);
@@ -42,13 +51,15 @@ export function createViewerController(config) {
             ...log,
             _hidden: hidden,
             _path: url.pathname,
-            _base_url: normalizeBaseUrlValue(log.request.url),
+            _base_url: baseUrl,
+            _alias: aliasLabel,
           };
         } catch {
           return {
             ...log,
             _hidden: false,
-            _base_url: normalizeBaseUrlValue(log?.request?.url),
+            _base_url: baseUrl,
+            _alias: aliasLabel,
           };
         }
       });
@@ -58,6 +69,7 @@ export function createViewerController(config) {
           logs: processedLogs,
           limit,
           baseUrlFilters,
+          aliasFilters,
           methodFilters,
           aliasByHost,
         }
@@ -73,6 +85,17 @@ export function createViewerController(config) {
         if (!log) {
           res.status(404).type('text').send('Not found');
           return;
+        }
+
+        const { aliasByHost, aliasNameMap } = buildAliasMaps(config.aliases);
+        const baseUrl = normalizeBaseUrlValue(log?.request?.url);
+        const providerKey = log?.provider ? String(log.provider).toLowerCase() : '';
+        const aliasLabel =
+          (providerKey && aliasNameMap[providerKey]) ||
+          (baseUrl ? aliasByHost[baseUrl] : null) ||
+          null;
+        if (aliasLabel) {
+          log._alias = aliasLabel;
         }
 
         const allowHidden = req.query.reveal === '1';
@@ -209,8 +232,9 @@ export function createViewerController(config) {
 function buildAliasMaps(aliases) {
   const aliasByHost = {};
   const aliasHostMap = {};
+  const aliasNameMap = {};
   if (!aliases || typeof aliases !== 'object') {
-    return { aliasByHost, aliasHostMap };
+    return { aliasByHost, aliasHostMap, aliasNameMap };
   }
 
   for (const [aliasName, entry] of Object.entries(aliases)) {
@@ -219,10 +243,11 @@ function buildAliasMaps(aliases) {
     if (!hostname) continue;
     const normalizedAlias = String(aliasName).toLowerCase();
     aliasHostMap[normalizedAlias] = hostname;
+    aliasNameMap[normalizedAlias] = aliasName;
     if (!aliasByHost[hostname]) {
       aliasByHost[hostname] = aliasName;
     }
   }
 
-  return { aliasByHost, aliasHostMap };
+  return { aliasByHost, aliasHostMap, aliasNameMap };
 }
