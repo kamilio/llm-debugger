@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
@@ -15,20 +15,29 @@ export const DEFAULT_CONFIG = {
 };
 
 let configCache = null;
+let cachedMtimeMs = null;
 const TEMPLATE_CONFIG_PATH = resolve(
   dirname(fileURLToPath(import.meta.url)),
   '..',
   'config.yaml'
 );
 
-export function loadConfig() {
+export function loadConfig({ forceReload = false } = {}) {
   const homeConfigPath = getHomeConfigPath();
   ensureHomeConfig(homeConfigPath);
   let configPath = getConfigPath();
   if (resolve(configPath) === TEMPLATE_CONFIG_PATH) {
     configPath = homeConfigPath;
   }
-  if (configCache && cachedPath === configPath) return configCache;
+  if (!forceReload && configCache && cachedPath === configPath) {
+    const currentMtime = getConfigMtime(configPath);
+    if (currentMtime !== null && cachedMtimeMs === currentMtime) {
+      return configCache;
+    }
+    if (currentMtime === null && cachedMtimeMs === null) {
+      return configCache;
+    }
+  }
 
   try {
     const content = readFileSync(configPath, 'utf-8');
@@ -42,11 +51,13 @@ export function loadConfig() {
       aliases: { ...DEFAULT_CONFIG.aliases, ...parsedAliases },
     };
     cachedPath = configPath;
+    cachedMtimeMs = getConfigMtime(configPath);
   } catch (error) {
     if (error.code === 'ENOENT') {
       configCache = { ...DEFAULT_CONFIG };
       cachedPath = configPath;
       writeDefaultConfig(configPath, configCache);
+      cachedMtimeMs = getConfigMtime(configPath);
     } else {
       throw error;
     }
@@ -104,6 +115,17 @@ function applyEnv(envConfig) {
     if (process.env[key] === undefined) {
       process.env[key] = String(value);
     }
+  }
+}
+
+function getConfigMtime(configPath) {
+  try {
+    return statSync(configPath).mtimeMs;
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
   }
 }
 

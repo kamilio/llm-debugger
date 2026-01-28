@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -112,5 +112,41 @@ describe('config loading', () => {
     assert.ok(Array.isArray(config.ignore_routes));
     assert.ok(Array.isArray(config.hide_from_viewer));
     assert.ok(config.aliases && typeof config.aliases === 'object');
+  });
+
+  it('reloads config when file changes', async () => {
+    const configPath = join(testDir, 'config.yaml');
+    writeFileSync(
+      configPath,
+      [
+        'default_alias: openai',
+        'aliases:',
+        '  openai:',
+        '    url: "https://api.openai.com"',
+        '',
+      ].join('\n'),
+      'utf-8'
+    );
+
+    const { loadConfig } = await import(`../src/config.js?t=${Date.now()}`);
+    let config = loadConfig();
+    assert.strictEqual(config.default_alias, 'openai');
+
+    writeFileSync(
+      configPath,
+      [
+        'default_alias: poe',
+        'aliases:',
+        '  poe:',
+        '    url: "https://api.poe.com"',
+        '',
+      ].join('\n'),
+      'utf-8'
+    );
+    const future = new Date(Date.now() + 2000);
+    utimesSync(configPath, future, future);
+
+    config = loadConfig();
+    assert.strictEqual(config.default_alias, 'poe');
   });
 });

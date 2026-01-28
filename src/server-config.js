@@ -13,6 +13,7 @@ export async function buildServerConfig() {
   const portNumber = await findAvailablePort(proxyHost, portSpec);
 
   const targetUrl = process.env.TARGET_URL;
+  const hasExplicitTarget = Boolean(targetUrl);
   const defaultAlias = fileConfig.default_alias;
   const hasAliases = fileConfig.aliases && Object.keys(fileConfig.aliases).length > 0;
 
@@ -27,6 +28,7 @@ export async function buildServerConfig() {
   let resolvedTargetUrl = null;
   let providerLabel = 'aliases-only';
   let proxyHeaders = null;
+  let targetAlias = null;
 
   const applyTargetPortOverride = (parsedTarget) => {
     if (!process.env.TARGET_PORT) return;
@@ -45,6 +47,7 @@ export async function buildServerConfig() {
       resolvedTargetUrl = parsedTarget.toString();
       providerLabel = targetUrl;
       proxyHeaders = aliasConfig.headers;
+      targetAlias = targetUrl;
     } else {
       let parsedTarget;
       try {
@@ -81,6 +84,8 @@ export async function buildServerConfig() {
     provider: providerLabel,
     aliases: fileConfig.aliases,
     proxyHeaders,
+    targetAlias,
+    hasExplicitTarget,
   };
 
   return {

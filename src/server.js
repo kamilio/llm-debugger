@@ -1,7 +1,7 @@
 import express from 'express';
 import { createProxyHandler, createStreamingProxyHandler } from './proxy.js';
 import { parseAliasPath, resolveAliasConfig } from './aliases.js';
-import { shouldIgnoreRoute } from './config.js';
+import { loadConfig, shouldIgnoreRoute } from './config.js';
 import { createViewerRouter } from './routes/viewer.js';
 
 export function createServer(config, { onListen } = {}) {
@@ -28,14 +28,9 @@ export function createServer(config, { onListen } = {}) {
       return;
     }
 
-    // If no target configured and not an alias request, return 404
-    if (!config.targetUrl && !aliasInfo) {
-      res.status(404).json({
-        error: 'No target configured',
-        message: 'Use /__proxy__/<alias> or configure --target',
-      });
-      return;
-    }
+    const runtimeConfig = loadConfig();
+    const runtimeAliases = runtimeConfig.aliases || {};
+    const runtimeDefaultAlias = runtimeConfig.default_alias;
 
     let proxyPathname = proxyUrl.pathname;
     let targetBaseUrl = config.targetUrl;
@@ -44,7 +39,7 @@ export function createServer(config, { onListen } = {}) {
     let providerLabel = config.provider;
 
     if (aliasInfo) {
-      const aliasConfig = resolveAliasConfig(config.aliases, aliasInfo.alias);
+      const aliasConfig = resolveAliasConfig(runtimeAliases, aliasInfo.alias);
       if (!aliasConfig) {
         res.status(404).json({ error: 'Unknown alias' });
         return;
@@ -54,6 +49,18 @@ export function createServer(config, { onListen } = {}) {
       targetPath = `${aliasInfo.path}${proxyUrl.search}${proxyUrl.hash}`;
       proxyHeaders = aliasConfig.headers;
       providerLabel = aliasInfo.alias;
+    } else {
+      const resolved = resolveRootTarget(config, runtimeAliases, runtimeDefaultAlias);
+      targetBaseUrl = resolved.targetBaseUrl;
+      providerLabel = resolved.providerLabel;
+      proxyHeaders = resolved.proxyHeaders;
+      if (!targetBaseUrl) {
+        res.status(404).json({
+          error: 'No target configured',
+          message: 'Use /__proxy__/<alias> or configure --target',
+        });
+        return;
+      }
     }
 
     if (shouldIgnoreRoute(proxyPathname)) {
@@ -92,6 +99,41 @@ export function createServer(config, { onListen } = {}) {
   });
 
   return server;
+}
+
+function resolveRootTarget(config, aliases, defaultAlias) {
+  if (config.targetAlias) {
+    const aliasConfig = resolveAliasConfig(aliases, config.targetAlias);
+    if (!aliasConfig) {
+      return { targetBaseUrl: null, providerLabel: 'aliases-only', proxyHeaders: null };
+    }
+    return {
+      targetBaseUrl: aliasConfig.url,
+      providerLabel: config.targetAlias,
+      proxyHeaders: aliasConfig.headers,
+    };
+  }
+
+  if (!config.hasExplicitTarget) {
+    if (!defaultAlias) {
+      return { targetBaseUrl: null, providerLabel: 'aliases-only', proxyHeaders: null };
+    }
+    const aliasConfig = resolveAliasConfig(aliases, defaultAlias);
+    if (!aliasConfig) {
+      return { targetBaseUrl: null, providerLabel: 'aliases-only', proxyHeaders: null };
+    }
+    return {
+      targetBaseUrl: aliasConfig.url,
+      providerLabel: defaultAlias,
+      proxyHeaders: aliasConfig.headers,
+    };
+  }
+
+  return {
+    targetBaseUrl: config.targetUrl,
+    providerLabel: config.provider,
+    proxyHeaders: config.proxyHeaders || null,
+  };
 }
 
 function isStreamingRequest(req) {
